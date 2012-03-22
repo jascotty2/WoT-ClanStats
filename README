@@ -1,0 +1,5 @@
+World of Tanks Clan Info
+
+on run, asks for clan name or tag, then (if found) runs in the background while downloading information on the players in the clan
+when completed (usually about 20 seconds), will open a web page (locally saved) with the results
+
