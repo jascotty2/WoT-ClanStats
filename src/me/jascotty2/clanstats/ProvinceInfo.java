@@ -1,4 +1,4 @@
-package me.jascotty2.claninfo;
+package me.jascotty2.clanstats;
 
 import me.jascotty2.lib.io.CheckInput;
 

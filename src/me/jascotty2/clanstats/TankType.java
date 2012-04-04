@@ -1,5 +1,5 @@
 
-package me.jascotty2.claninfo;
+package me.jascotty2.clanstats;
 
 import me.jascotty2.lib.util.Str;
 
@@ -32,6 +32,7 @@ public enum TankType {
 	
 	public static TankType fromTankName(String tank) {
 		if(Str.isIn(tank, 
+				/// Heavies
 				// soviet
 				"KV", 
 				"KV-220 Beta-Test",
@@ -60,10 +61,11 @@ public enum TankType {
 				"T1 heavy",
 				"M6",
 				"T29",
+				"T34",
 				"T32",
 				"M6A2E1",
-				"T34",
-				"T30",
+				"M103",
+				"T110E5",
 				// French
 				"B1",
 				"BDR G1B",
@@ -74,6 +76,7 @@ public enum TankType {
 				"AMX 50B")) {
 			return TankType.HEAVY;
 		} else if(Str.isIn(tank, 
+				/// Mediums
 				// soviet
 				"T-28",
 				"A-32",
@@ -101,7 +104,6 @@ public enum TankType {
 				"Panther II",
 				"E-50",
 				// American
-				"Medium Tanks",
 				"T2 Medium Tank",
 				"M2 Medium Tank",
 				"M3 Lee",
@@ -122,6 +124,7 @@ public enum TankType {
 				"Type 59")) {
 			return TankType.MEDIUM;
 		} else if(Str.isIn(tank, 
+				// Light Tanks
 				// soviet
 				"MS-1",
 				"BT-2",
@@ -130,7 +133,7 @@ public enum TankType {
 				"BT-7",
 				"T-46",
 				"BT-SV",
-				"M3 Stuart",
+				"M3 Stuart II",
 				"T-127",
 				"A-20",
 				"T-50",
@@ -169,6 +172,7 @@ public enum TankType {
 				"AMX 13 90")) {
 			return TankType.LIGHT;
 		} else if(Str.isIn(tank, 
+				/// SPGs
 				// soviet
 				"SU-18",
 				"SU-26",
@@ -194,11 +198,13 @@ public enum TankType {
 				"M41",
 				"M12",
 				"M40/M43",
-				"T92"
+				"T92",
 				// French
+				"105 leFH18B2"
 				)) {
 			return TankType.SPG;
 		} else if(Str.isIn(tank, 
+				/// Tank Destroyers
 				// soviet
 				"AT-1",
 				"SU-76",
@@ -219,15 +225,22 @@ public enum TankType {
 				"Ferdinand",
 				"Jagdtiger",
 				// American
-				"T18",
-				"T82",
-				"T40",
-				"M10 Wolverine",
-				"M36 Slugger",
-				"T25 AT",
-				"T28",
-				"T95"
+				"T18", 
+				"T82", 
+				"T40", 
+				"M8A1", 
+				"M10 Wolverine", 
+				"T49", 
+				"M36 Slugger", 
+				"M18 Hellcat", 
+				"T25 AT", 
+				"T25/2", 
+				"T28", 
+				"T28 Prototype", 
+				"T30", 
+				"T95",
 				// French
+				"FCM36 Pak40"
 				)) {
 			return TankType.TD;
 		}

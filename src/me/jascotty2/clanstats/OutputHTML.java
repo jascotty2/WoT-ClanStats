@@ -1,4 +1,4 @@
-package me.jascotty2.claninfo;
+package me.jascotty2.clanstats;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,7 +17,7 @@ import javax.swing.JOptionPane;
 
 public class OutputHTML {
 
-		static String logo = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEh"
+	static String logo = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEh"
 			+ "EPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh"
 			+ "4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABAAJADASIAAhEBAxEB/8QAHQAAAAcBAQEAAAAAAAAAAAAAAwQFBgcICQIBAP/EADkQAAEDAw"
 			+ "MBBgQDBwQDAAAAAAECAwQABREGEiExBxNBUWFxFCIjgRYykQgVQmKhscFSgpLRJFOi/8QAFwEBAQEBAAAAAAAAAAAAAAAAAQACA//EAB8RAA"
@@ -57,20 +57,26 @@ public class OutputHTML {
 			+ "oRpG8SrfqHvYKwp6Ql9kYwSoLUf02qP3xXun9EXRy9WpqXExHQ0e9JIIAKl/8A1yOOvStFfwhAwQIrfP8ALXI0fbx0jN++0VcX7Gr0Z1xNMa"
 			+ "vg2xceEJLXwErvWkIcwXd2AcJ8QCkH/crzqXv2atC35Wt39UXOO3EU8AgMp5IAxkqGfl6DGeTk+9W3RpCAF5MdvJ/lpRt9jjwsBppIHkE8Vl"
 			+ "/HX9sVudByytqajISc80pUGygIA4xQldTB/9k=";
+	static String logoURL = "http://worldoftanks.com/static/3.1.0.5/common/css/block/b-header/img/wot-logo.png";
 	static String css = null;
 	static String js = null;
 	static String template = null;
+	static boolean is_web = false;
 
-	static void loadRes() throws Exception {
+	static void loadRes(boolean is_web) throws Exception {
 		if (css == null) {
-			css = getResFile("style.css");
+			OutputHTML.is_web = is_web;
+			css = getResFile(is_web ? "style_web.css" : "style.css");
 			js = getResFile("boxover.js");
 			template = getResFile("template.htm");
-			if(css == null || css.isEmpty() 
+			if (css == null || css.isEmpty()
 					|| js == null || js.isEmpty()
 					|| template == null || template.isEmpty()) {
 				throw new Exception("Unexpected Error extracting files from jar");
 			}
+		} else if(OutputHTML.is_web != is_web) {
+			OutputHTML.is_web = is_web;
+			css = getResFile(is_web ? "style_web.css" : "style.css");
 		}
 	}
 
@@ -78,7 +84,7 @@ public class OutputHTML {
 		StringWriter writer = new StringWriter();
 		InputStream in = null;
 		try {
-			URL res = OutputHTML.class.getResource("/me/jascotty2/clantracker/res/" + filen);
+			URL res = OutputHTML.class.getResource("/me/jascotty2/clanstats/res/" + filen);
 			if (res == null) {
 				Logger.getAnonymousLogger().log(Level.WARNING, "can't find " + filen + " in plugin JAR file"); //$NON-NLS-1$
 				return null;
@@ -109,16 +115,28 @@ public class OutputHTML {
 		}
 		return writer.toString();
 	}
+	
+	public static void writeFile(GetClan c, String dir, boolean is_web) throws Exception {
+		File f;
+		if(dir != null) {
+				File d = new File(dir);
+				d.mkdirs();
+			f = new File(dir, c.clanName + " [" + c.clanTag + "].html");
+		} else {
+			f = new File(c.clanName + " [" + c.clanTag + "].html");
+		}
+		writeFile(c, f, is_web);
+	}
 
-	public static void writeFile(GetClan c, File f) throws Exception {
-		loadRes();
+	public static void writeFile(GetClan c, File f, boolean is_web) throws Exception {
+		loadRes(is_web);
 		BufferedWriter out = null;
 		FileWriter outStream = null;
 		try {
 			outStream = new FileWriter(f);
 			out = new BufferedWriter(outStream);
 		} catch (Exception ex) {
-			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(OutputHTML.class.getName()).log(Level.SEVERE, null, ex);
 			JOptionPane.showMessageDialog(null, "Error Opening output file: " + ex.getMessage(),
 					"IO Error", JOptionPane.ERROR_MESSAGE);
 			return;
@@ -126,12 +144,26 @@ public class OutputHTML {
 		SimpleDateFormat crformat = new SimpleDateFormat("MMM dd yyy");
 		SimpleDateFormat genformat = new SimpleDateFormat("EE, MMM dd yyy  HH:mm zzz");
 		SimpleDateFormat lastformat = new SimpleDateFormat("MM/dd/yyy HH:mm");
-		
+
 		// prepare data
 		String server = "http://worldoftanks." + c.server;
 		StringBuilder tierTableData = new StringBuilder("\n");
 		for (int i = 9; i > 0; --i) {
-			tierTableData.append("<tr><td>").
+			int last24 = 0, num = 0;
+			for (PlayerInfo p : c.players) {
+				if(p.maxEffectiveTier == i + 1) {
+					++num;
+					float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+					if(hago <= 24) {
+						++last24;
+					}
+				}
+			}
+			tierTableData.append("<tr title=\"header=[Active Tier ").
+					append(i + 1).
+					append("'s:]" + "body=[").
+					append(last24).append(" / ").append(num).
+					append("]\"><td>").
 					append(String.valueOf(i + 1)).
 					append("</td><td>").
 					append(String.valueOf(c.maxTiers[i])).
@@ -141,48 +173,56 @@ public class OutputHTML {
 		}
 
 		StringBuilder tanksTableData = new StringBuilder("\n");
+		int last24 = 0;
 		for (PlayerInfo p : c.players) {
 			tanksTableData.append("<tr><td class=\"n\" ").
 					append("title=\"header=[Player Stats: (").
-					append(p.playername).append(")]  body=[GR: ").
+					append(p.playername).
+					append(")]  body=[GR: ").
 					append(String.valueOf(p.playerRating)).
 					append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
 					append("<br>Last Battle: ").append(lastformat.format(p.lastbattle)).
 					append("]\"><a href=\"").append(server).append("/community/accounts/").
 					append(p.playerID).append("/\">").
 					append(p.playername).append("</a>");
-			float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) /  3600000);
-			if(hago <= 1) {
+			float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+			if(hago <= 24) {
+				++last24;
+			}
+			if (hago <= 1) {
 				tanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
-						append(String.valueOf((int)hago)).append("</div>");
-			} else if(hago <= 2) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #669900;\">").
-						append(String.valueOf((int)hago)).append("</div>");
-			} else if(hago <= 5) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #99CC00;\">").
-						append(String.valueOf((int)hago)).append("</div>");
-			} else if(hago <= 12) {
+						append(String.valueOf((int) hago)).append("</div>");
+			} else if (hago <= 2) {
+				tanksTableData.append("<div class=\"tm\" style=\"background-color: #669900; color: #000;\">").
+						append(String.valueOf((int) hago)).append("</div>");
+			} else if (hago <= 5) {
+				tanksTableData.append("<div class=\"tm\" style=\"background-color: #99CC00; color: #000;\">").
+						append(String.valueOf((int) hago)).append("</div>");
+			} else if (hago <= 12) {
 				tanksTableData.append("<div class=\"tm\" style=\"background-color: #996600;\">").
-						append(String.valueOf((int)hago)).append("</div>");
-			} else if(hago <= 24) {
+						append(String.valueOf((int) hago)).append("</div>");
+			} else if (hago <= 24) {
 				tanksTableData.append("<div class=\"tm\" style=\"background-color: #990000;\">").
-						append(String.valueOf((int)hago)).append("</div>");
-			} else if(hago <= 99) {
+						append(String.valueOf((int) hago)).append("</div>");
+			} else if (hago <= 99) {
 				tanksTableData.append("<div class=\"tm\" style=\"background-color: #330000;\">").
-						append(String.valueOf((int)hago)).append("</div>");
+						append(String.valueOf((int) hago)).append("</div>");
 			}
 			tanksTableData.append("</td>");
 			int n = 10;
 			for (Tank t : p.getSortedTanks()) {
 				// ö = \u00F6 = &#246;
+				// ä = \u00E4 = &#228;
 				tanksTableData.append("<td><div title=\"header=[").
-						append(t.name.replace("\u00F6", "&#246;")).
+						append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
 						append("] body=[(Tier ").
 						append(t.tier);
-				if(t.type != TankType.UNKNOWN) {
+				if (t.type != TankType.UNKNOWN) {
 					tanksTableData.append(" ").append(t.type.getName());
 				}
-				tanksTableData.append(")]\">").
+				tanksTableData.append(")<br>").
+						append(String.valueOf(p.tankBattles.get(t).battles)).
+						append(" battles]\">").
 						append(t.name.replace("\u00F6", "&#246;")).
 						append("</div></td>");
 				if (--n <= 0) {
@@ -191,28 +231,29 @@ public class OutputHTML {
 			}
 			tanksTableData.append("</tr>\n");
 		}
-		
+
 		// now write :)
 		try {
 			out.write(template.replace("%%%%%%css%%%%%%", css).
 					replace("%%%%%%js%%%%%%", js).
-					replace("%%%%%%LogoImg%%%%%%", logo).
+					replace("%%%%%%LogoImg%%%%%%", is_web ? logoURL : logo).
 					replace("%%%%%%server%%%%%%", server).
-					replace("%%%%%%ClanName%%%%%%", c.clanName).
-					replace("%%%%%%ClanID%%%%%%", c.clanID).
-					replace("%%%%%%ClanTAG%%%%%%", c.clanTag).
-					replace("%%%%%%ClanEmblem%%%%%%", c.emblemURL).
+					replace("%%%%%%ClanName%%%%%%", nonNull(c.clanName)).
+					replace("%%%%%%ClanID%%%%%%", nonNull(c.clanID)).
+					replace("%%%%%%ClanTAG%%%%%%", nonNull(c.clanTag)).
+					replace("%%%%%%ClanEmblem%%%%%%", nonNull(c.emblemURL)).
 					replace("%%%%%%Generated%%%%%%", genformat.format(new Date())).
-					replace("%%%%%%OwnerID%%%%%%", c.ownerID).
-					replace("%%%%%%OwnerName%%%%%%", c.ownerName).
-					replace("%%%%%%ClanCreated%%%%%%", crformat.format(c.created)).
+					replace("%%%%%%OwnerID%%%%%%", nonNull(c.ownerID)).
+					replace("%%%%%%OwnerName%%%%%%", nonNull(c.ownerName)).
+					replace("%%%%%%ClanCreated%%%%%%", c.created == null ? "?" : crformat.format(c.created)).
 					replace("%%%%%%Members%%%%%%", String.valueOf(c.numPlayers)).
 					replace("%%%%%%Provinces%%%%%%", String.valueOf(c.provinces.size())).
 					replace("%%%%%%Income%%%%%%", String.valueOf(c.clanIncome)).
 					replace("%%%%%%TierTableData%%%%%%", tierTableData.toString()).
-					replace("%%%%%%TanksTableData%%%%%%", tanksTableData.toString()));
+					replace("%%%%%%TanksTableData%%%%%%", tanksTableData.toString()).
+					replace("%%%%%%Active%%%%%%", String.valueOf(last24)));
 		} catch (IOException ex) {
-			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(OutputHTML.class.getName()).log(Level.SEVERE, null, ex);
 		} finally {
 			if (out != null) {
 				try {
@@ -224,6 +265,9 @@ public class OutputHTML {
 		}
 	}
 
+	static String nonNull(String v) {
+		return v == null ? "" : v;
+	}
 //	public static void main(String[] args) throws Exception {
 //		GetClan c = new GetClan("MAYHM");
 //		c.clanName = "Stalkers of Mayhem";

@@ -1,10 +1,9 @@
-package me.jascotty2.claninfo;
+package me.jascotty2.clanstats;
 
 public class BattleStats {
-	String name;
-	int battles, victories, losses;
+	public int battles, victories, losses;
 	// not on the site per-tank..
-	int destroyed, spotted, hitRatio, 
+	public int destroyed, spotted, hitRatio, 
 			survived, damage, 
 			captured, defense,
 			totalExp, maxExp, avgExp;
