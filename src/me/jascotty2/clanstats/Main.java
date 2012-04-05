@@ -20,7 +20,7 @@ public class Main implements GetClan.ScanCallback {
 	public static void main(String[] args) {
 		if (args.length == 1) {
 
-			c = new GetTournamentTeam("75655", "StalkersofMayhem");
+			c = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/33-World_of_Tanks_Classic,_Season_I/", "StalkersofMayhem");//"75655", "StalkersofMayhem");
 			c.callback = m;
 			c.isFound = true;
 			c.max_threads = 5;
@@ -86,17 +86,18 @@ public class Main implements GetClan.ScanCallback {
 				deamonMode = CheckInput.GetBoolean(args[2], false);
 			}
 		} else {
-			clan = JOptionPane.showInputDialog(null, "Clan to Search, or Tournament URL",
-					"Clan Stats by Jacob Scott", JOptionPane.QUESTION_MESSAGE);
-			if (clan == null || clan.length() == 0) {
-				return;
-			}
 			do {
+				clan = JOptionPane.showInputDialog(null, "Clan to Search, or Tournament URL",
+						"Clan Stats by Jacob Scott", JOptionPane.QUESTION_MESSAGE);
+				if (clan == null || clan.length() == 0) {
+					return;
+				}
 				st = System.currentTimeMillis();
 				c = !clan.toLowerCase().startsWith("http://") ? new GetClan(clan)
 						: new GetTournamentTeam(clan, "");//"MAYHM"); //"SNS");//
 				if (c instanceof GetTournamentTeam) {
-					if (!((GetTournamentTeam) c).findEventID()) {
+					System.out.println("id: " + ((GetTournamentTeam) c).eventID);
+					if (((GetTournamentTeam) c).eventID.isEmpty()) {
 						clan = JOptionPane.showInputDialog(null,
 								"<html><span style='font-weight:bold;color:red;'>Tournament '"
 								+ "<span style='font-weight:bold;color:blue;'>" + clan + "</span>'"
@@ -124,7 +125,8 @@ public class Main implements GetClan.ScanCallback {
 							+ (c instanceof GetTournamentTeam ? "Team" : "Clan")
 							+ " '<span style='font-weight:bold;color:blue;'>" + clan
 							+ "</span>' was not found</span><br />"
-							+ "Clan to Search?</html>", "Clan Stats by Jacob Scott", JOptionPane.QUESTION_MESSAGE);
+							+ (c instanceof GetTournamentTeam ? "Tournament Team" : "Clan")
+							+ " to Search?</html>", "Clan Stats by Jacob Scott", JOptionPane.QUESTION_MESSAGE);
 					if (clan == null || clan.length() == 0) {
 						break;
 					}

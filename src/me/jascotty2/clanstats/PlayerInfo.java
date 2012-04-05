@@ -21,6 +21,7 @@ public class PlayerInfo {
 	public Map<Tank, BattleStats> tankBattles = new HashMap<Tank, BattleStats>();
 	public int[] tanksByTier = new int[10];
 	public int maxEffectiveTier;
+	public boolean is_banned = false;
 	public Date created, memberSince, lastbattle;
 
 	public void setCreated(String created) {
@@ -83,7 +84,7 @@ public class PlayerInfo {
 		if (playerID == null) {
 			return;
 		}
-		String data = QueryParser.get("http://worldoftanks." + serverExt + "/community/accounts/" + playerID + "/");
+		String data = QueryParser.getPage("http://worldoftanks." + serverExt + "/community/accounts/" + playerID + "/");
 		if (data == null) {
 			return;
 		}
@@ -91,6 +92,12 @@ public class PlayerInfo {
 		String numberNW = (serverExt.equals("com") || serverExt.equals("eu")) ? "td-number-nowidth" : "td-number";
 
 		int start = data.indexOf("Registered");
+		if(start < 0) {
+			if(data.indexOf("Player profile is closed.") != -1) {
+				created = null;
+			}
+			return;
+		}
 		setCreated(QueryParser.getStatTimestamp(data, "Registered", start));
 		setLastbattle(QueryParser.getStatTimestamp(data, "Data as of", start));
 		if(data.substring(start).contains("In Clan")) {

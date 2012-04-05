@@ -1,6 +1,7 @@
 package me.jascotty2.clanstats;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
@@ -33,6 +34,32 @@ public class QueryParser {
 				res.append(tmp);
 			}
 			return res.toString();
+		} catch (FileNotFoundException e) {
+			// 404
+		} catch (Exception ex) {
+			Logger.getLogger(QueryParser.class.getName()).log(Level.SEVERE, null, ex);
+		}
+		return null;
+	}
+
+	public static String getPage(String url) {
+		try {
+			URL localURL = new URL(url);
+			URLConnection localURLConnection = localURL.openConnection();
+			localURLConnection.setRequestProperty("Accept-Language", "en-us;q=0.5,en;q=0.3");
+			localURLConnection.setRequestProperty("Accept-Encoding", "paco");
+			localURLConnection.setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+			localURLConnection.setRequestProperty("Connection", "close");
+			BufferedReader localBufferedReader = new BufferedReader(
+					new InputStreamReader(localURLConnection.getInputStream(), "UTF8"));
+			String tmp;
+			StringBuilder res = new StringBuilder();
+			while ((tmp = localBufferedReader.readLine()) != null) {
+				res.append(tmp);
+			}
+			return res.toString();
+		} catch (FileNotFoundException e) {
+			// 404
 		} catch (Exception ex) {
 			Logger.getLogger(QueryParser.class.getName()).log(Level.SEVERE, null, ex);
 		}
@@ -96,7 +123,7 @@ public class QueryParser {
 						// all keys begin with a quote
 						i = getAssertedIndex(dat, "\"", i) + 1;
 						int end = getAssertedIndex(dat, "\"", i + 1);
-						while(dat.charAt(end - 1) == '\\') {
+						while (dat.charAt(end - 1) == '\\') {
 							end = getAssertedIndex(dat, "\"", end + 1);
 						}
 						String k = dat.substring(i, end);
@@ -108,7 +135,7 @@ public class QueryParser {
 						if (dat.charAt(i) == '"') {
 							++i;
 							end = getAssertedIndex(dat, "\"", i);
-							while(dat.charAt(end - 1) == '\\') {
+							while (dat.charAt(end - 1) == '\\') {
 								end = getAssertedIndex(dat, "\"", end + 1);
 							}
 							toAdd = dat.substring(i, end);

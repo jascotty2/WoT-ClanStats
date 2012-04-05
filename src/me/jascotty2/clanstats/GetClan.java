@@ -152,7 +152,8 @@ public class GetClan implements Runnable, Cloneable {
 					p.playerID = dat.get("account_id").toString();
 					p.position = (String) dat.get("role");
 					p.setMemberSince(dat.get("member_since").toString());
-
+					//if(dat.get("banned") != null) 
+					p.is_banned = (Boolean) dat.get("banned");
 					players.add(p);
 				}
 			}

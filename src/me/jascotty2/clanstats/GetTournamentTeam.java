@@ -9,7 +9,7 @@ import me.jascotty2.lib.io.CheckInput;
 
 public class GetTournamentTeam extends GetClan {
 
-	String eventID = "", tournamentID,
+	String eventID = "", regEventID = "", tournamentID,
 			eventName = "";
 	boolean needsPassword = false;
 	//boolean active = false;
@@ -19,11 +19,25 @@ public class GetTournamentTeam extends GetClan {
 		if (tournamentID.toLowerCase().startsWith("http://")) {
 			try {
 				// eg. http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/
+				String url = tournamentID;
 				if (tournamentID.endsWith("/")) {
 					tournamentID = tournamentID.substring(0, tournamentID.length() - 1);
+				} else {
+					url += "/";
 				}
 				tournamentID = tournamentID.substring(tournamentID.lastIndexOf('/') + 1);
-				tournamentID = tournamentID.substring(0, tournamentID.indexOf("-"));
+				if (tournamentID.contains("-")) {
+					tournamentID = tournamentID.substring(0, tournamentID.indexOf("-"));
+				}
+				// now that have the ID, try to load the registrations page to find the eventID
+				if (url.contains("registrations")) {
+					// reset to format, just in case
+					url = url.substring(0, url.indexOf("registrations"));
+					System.out.println(url);
+				}
+				url += "registrations/";
+				regEventID = getEventID(url + (CheckInput.GetInt(tournamentID, 3) - 2) + "-Registration/");
+				eventID = getEventID(url + (CheckInput.GetInt(tournamentID, 3) - 3) + "-Registration/");
 			} catch (Exception e) {
 				tournamentID = "";
 			}
@@ -31,19 +45,38 @@ public class GetTournamentTeam extends GetClan {
 		this.tournamentID = tournamentID;
 	}
 
-	public boolean findEventID() {
-		if (!tournamentID.isEmpty()) {
-			// now find the eventID
-			String ret = QueryParser.get("http://worldoftanks." + server + "/uc/tournaments/?json=1");
-			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
-			for (Map<String, Object> dat : data) {
-				System.out.println("Tournament: ");
-				for (String k : dat.keySet()) {
-					System.out.println("\t" + k + ": " + dat.get(k));
+	private String getEventID(String url) {
+		String page = QueryParser.getPage(url);
+		if (page != null) {
+			int i = page.indexOf("/uc/teams/?event_id=");
+			if (i != -1) {
+				i += "/uc/teams/?event_id=".length() - 1;
+				StringBuilder n = new StringBuilder(page.charAt(i));
+				for (++i; i < page.length(); ++i) {
+					if (Character.isDigit(page.charAt(i))) {
+						n.append(page.charAt(i));
+					} else {
+						break;
+					}
 				}
+				return n.toString();
 			}
 		}
-		return false;
+		return "";
+	}
+
+	public List<Map<String, Object>> findEvents() {
+		// now find the eventID
+		String ret = QueryParser.get("http://worldoftanks." + server + "/uc/tournaments/?json=1");
+//			System.out.println(ret);
+//			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
+//			for (Map<String, Object> dat : data) {
+//				System.out.println("Tournament: ");
+//				for (String k : dat.keySet()) {
+//					System.out.println("\t" + k + ": " + dat.get(k));
+//				}
+//			}
+		return ret == null ? null : QueryParser.getItemLists("items", ret);
 	}
 
 	@Override
@@ -56,14 +89,12 @@ public class GetTournamentTeam extends GetClan {
 			ownerID = "";
 			clanName = clanTag = emblemURL = null;
 			numPlayers = 0;
-			if (eventID.isEmpty()) {
-				if (!findEventID()) {
-					return;
-				}
+			if (eventID.isEmpty() || searchTag.isEmpty()) {
+				return;
 			}
 			// now ask for the info
 			requestData = QueryParser.get("http://worldoftanks." + server
-					+ "/uc/teams/?event_id=" + eventID + "&type=table&limit=1&order_by=name&search=" + searchTag);
+					+ "/uc/teams/?event_id=" + eventID + "&type=table&order_by=name&limit=10&search=" + searchTag);
 
 			// data should be ok if returned success
 			if (requestData == null || !requestData.contains("\"result\":\"success\"")) {
@@ -71,7 +102,17 @@ public class GetTournamentTeam extends GetClan {
 			}
 			List<Map<String, Object>> data = QueryParser.getItemLists("items", requestData);
 			if (data == null || data.isEmpty()) {
-				return;
+				requestData = QueryParser.get("http://worldoftanks." + server
+						+ "/uc/teams/?event_id=" + regEventID + "&type=table&order_by=name&limit=10&search=" + searchTag);
+
+				// data should be ok if returned success
+				if (requestData == null || !requestData.contains("\"result\":\"success\"")) {
+					return;
+				}
+				data = QueryParser.getItemLists("items", requestData);
+				if (data == null || data.isEmpty()) {
+					return;
+				}
 			}
 			Map<String, Object> dat = data.get(0);
 
@@ -140,8 +181,10 @@ public class GetTournamentTeam extends GetClan {
 	}
 
 	public static void main(String[] args) {
-		GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/", "StalkersofMayhem");
-		System.out.println("found? " + t.findEventID());
+		//GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/", "StalkersofMayhem");
+		GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/33-World_of_Tanks_Classic,_Season_I/", "StalkersofMayhem");
+		t.run();
+		System.out.println("found? " + t.isFound);
 
 	}
 }

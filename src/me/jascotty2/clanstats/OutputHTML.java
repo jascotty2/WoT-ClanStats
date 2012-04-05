@@ -74,7 +74,7 @@ public class OutputHTML {
 					|| template == null || template.isEmpty()) {
 				throw new Exception("Unexpected Error extracting files from jar");
 			}
-		} else if(OutputHTML.is_web != is_web) {
+		} else if (OutputHTML.is_web != is_web) {
 			OutputHTML.is_web = is_web;
 			css = getResFile(is_web ? "style_web.css" : "style.css");
 		}
@@ -115,12 +115,12 @@ public class OutputHTML {
 		}
 		return writer.toString();
 	}
-	
+
 	public static void writeFile(GetClan c, String dir, boolean is_web) throws Exception {
 		File f;
-		if(dir != null) {
-				File d = new File(dir);
-				d.mkdirs();
+		if (dir != null) {
+			File d = new File(dir);
+			d.mkdirs();
 			f = new File(dir, c.clanName + " [" + c.clanTag + "].html");
 		} else {
 			f = new File(c.clanName + " [" + c.clanTag + "].html");
@@ -151,10 +151,10 @@ public class OutputHTML {
 		for (int i = 9; i > 0; --i) {
 			int last24 = 0, num = 0;
 			for (PlayerInfo p : c.players) {
-				if(p.maxEffectiveTier == i + 1) {
+				if (p.maxEffectiveTier == i + 1) {
 					++num;
 					float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
-					if(hago <= 24) {
+					if (hago <= 24) {
 						++last24;
 					}
 				}
@@ -178,15 +178,28 @@ public class OutputHTML {
 			tanksTableData.append("<tr><td class=\"n\" ").
 					append("title=\"header=[Player Stats: (").
 					append(p.playername).
-					append(")]  body=[GR: ").
-					append(String.valueOf(p.playerRating)).
-					append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
-					append("<br>Last Battle: ").append(lastformat.format(p.lastbattle)).
-					append("]\"><a href=\"").append(server).append("/community/accounts/").
-					append(p.playerID).append("/\">").
-					append(p.playername).append("</a>");
-			float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
-			if(hago <= 24) {
+					append(")]  body=[");
+			if (p.is_banned) {
+				tanksTableData.append("(Player is Banned)<br>");
+			}
+			if (p.created == null) {
+				tanksTableData.append("(Closed Account)");
+			} else {
+				tanksTableData.append("GR: ").
+						append(String.valueOf(p.playerRating)).
+						append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
+						append("<br>Last Battle: ").append(p.lastbattle == null ? "- ? -" : lastformat.format(p.lastbattle));
+			}
+			tanksTableData.append("]\">").append("<a href=\"").append(server).append("/community/accounts/").
+					append(p.playerID).append("/\">");
+			if (p.is_banned) {
+				tanksTableData.append("<del>").append(p.playername).append("</del>");
+			} else {
+				tanksTableData.append(p.playername);
+			}
+			tanksTableData.append("</a>");
+			float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+			if (hago <= 24) {
 				++last24;
 			}
 			if (hago <= 1) {
