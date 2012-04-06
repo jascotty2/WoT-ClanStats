@@ -96,7 +96,6 @@ public class Main implements GetClan.ScanCallback {
 				c = !clan.toLowerCase().startsWith("http://") ? new GetClan(clan)
 						: new GetTournamentTeam(clan, "");//"MAYHM"); //"SNS");//
 				if (c instanceof GetTournamentTeam) {
-					System.out.println("id: " + ((GetTournamentTeam) c).eventID);
 					if (((GetTournamentTeam) c).eventID.isEmpty()) {
 						clan = JOptionPane.showInputDialog(null,
 								"<html><span style='font-weight:bold;color:red;'>Tournament '"
@@ -145,6 +144,9 @@ public class Main implements GetClan.ScanCallback {
 
 		try {
 			if (!deamonMode) {
+				if(c instanceof GetTournamentTeam) {
+					((GetTournamentTeam) c).applyTierLimits();
+				}
 				long end = System.currentTimeMillis();
 
 
@@ -216,15 +218,18 @@ public class Main implements GetClan.ScanCallback {
 			System.out.println("\t);");
 			 */
 			File dir = new File(saveDir);
+			File f;
 			if (!saveDir.isEmpty() && !saveDir.equals(".")) {
 				dir.mkdirs();
 			}
 			if (c instanceof GetTournamentTeam) {
-				dir = new File(dir, "teams" + File.separator + ((GetTournamentTeam) c).eventID
-						+ (((GetTournamentTeam) c).eventName.isEmpty() ? "" : "-" + ((GetTournamentTeam) c).eventName));
+				dir = new File(dir, "teams" + File.separator + ((GetTournamentTeam) c).tournamentID
+						+ (((GetTournamentTeam) c).eventName.isEmpty() ? "" : "-" + ((GetTournamentTeam) c).eventName.replace(" ", "_")));
 				dir.mkdirs();
+				f = new File(dir, c.clanName + ".html");
+			} else {
+				f = new File(dir, c.clanName + " [" + c.clanTag + "].html");
 			}
-			File f = new File(dir, c.clanName + " [" + c.clanTag + "].html");
 			System.out.println("writing to file: " + f.getPath());
 			OutputHTML.writeFile(c, f, !deamonMode);
 			if (!deamonMode) {

@@ -56,7 +56,7 @@ public class GetClan implements Runnable, Cloneable {
 
 			// now ask for the info
 			requestData = QueryParser.get("http://worldoftanks." + server
-					+ "/community/clans/?type=table&offset=0&limit=1&order_by=name&search="
+					+ "/community/clans/?type=table&offset=0&limit=10&order_by=name&search="
 					+ searchTag + "&echo=2&id=clans_index");
 
 			// data should be ok if returned success
@@ -67,7 +67,20 @@ public class GetClan implements Runnable, Cloneable {
 			if (data == null || data.isEmpty()) {
 				return;
 			}
-			Map<String, Object> dat = data.get(0);
+			Map<String, Object> dat = null;
+			if(data.size() > 1) {
+				// search for exact
+				for(Map<String, Object> d : data) {
+					if(((String)d.get("abbreviation")).equalsIgnoreCase(searchTag)
+							|| ((String)d.get("name")).equalsIgnoreCase(searchTag)) {
+						dat = d;
+						break;
+					}
+				}
+				if(dat == null) return;
+			} else {
+				dat = data.get(0);
+			}
 			// extract info from results
 			clanTag = (String) dat.get("abbreviation");
 			clanName = (String) dat.get("name");

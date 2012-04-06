@@ -9,9 +9,10 @@ import me.jascotty2.lib.io.CheckInput;
 
 public class GetTournamentTeam extends GetClan {
 
-	String eventID = "", regEventID = "", tournamentID,
+	String eventID = "", regEventID = "", tournamentID = "",
 			eventName = "";
 	boolean needsPassword = false;
+	int maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
 	//boolean active = false;
 
 	public GetTournamentTeam(String tournamentID, String tag) {
@@ -38,6 +39,8 @@ public class GetTournamentTeam extends GetClan {
 				url += "registrations/";
 				regEventID = getEventID(url + (CheckInput.GetInt(tournamentID, 3) - 2) + "-Registration/");
 				eventID = getEventID(url + (CheckInput.GetInt(tournamentID, 3) - 3) + "-Registration/");
+				this.tournamentID = tournamentID;
+				findName();
 			} catch (Exception e) {
 				tournamentID = "";
 			}
@@ -65,18 +68,47 @@ public class GetTournamentTeam extends GetClan {
 		return "";
 	}
 
-	public List<Map<String, Object>> findEvents() {
+	public final boolean findName() {
 		// now find the eventID
 		String ret = QueryParser.get("http://worldoftanks." + server + "/uc/tournaments/?json=1");
 //			System.out.println(ret);
 //			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
-//			for (Map<String, Object> dat : data) {
-//				System.out.println("Tournament: ");
-//				for (String k : dat.keySet()) {
-//					System.out.println("\t" + k + ": " + dat.get(k));
-//				}
-//			}
-		return ret == null ? null : QueryParser.getItemLists("items", ret);
+//			
+		if (ret != null) {
+			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
+			for (Map<String, Object> dat : data) {
+				if (dat.get("id").toString().equals(tournamentID)) {
+					eventName = (String) dat.get("title");
+					//  maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
+					String desc = QueryParser.getDataWithoutTags(
+							((String) dat.get("description")).replace("\\r", "\r").replace("\\n", "\n"));
+					maxHT = getMax(desc, "Heavy tank - ", maxHT);
+					maxMT = getMax(desc, "Medium tank - ", maxMT);
+					maxLT = getMax(desc, "Light tank - ", maxLT);
+					maxTD = getMax(desc, "Tank Destroyer - ", maxTD);
+					maxSPG = getMax(desc, "SPG - ", maxSPG);
+
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private int getMax(String data, String search, int def) {
+		int i = data.indexOf(search);
+		if (i != -1) {
+			StringBuilder n = new StringBuilder();
+			for (; i < data.length(); ++i) {
+				if (Character.isDigit(data.charAt(i))) {
+					n.append(data.charAt(i));
+				} else if (n.length() > 0) {
+					break;
+				}
+			}
+			return CheckInput.GetInt(n.toString(), def);
+		}
+		return def;
 	}
 
 	@Override
@@ -180,9 +212,57 @@ public class GetTournamentTeam extends GetClan {
 		}
 	}
 
+	public void applyTierLimits() {
+		for (int i = 0; i < 10; ++i) {
+			totalTiers[i] = maxTiers[i] = 0;
+		}
+		for (PlayerInfo p : players) {
+			for (Tank t : p.tankBattles.keySet().toArray(new Tank[0])) {
+				if (t.type == TankType.HEAVY) {
+					if (t.tier > maxHT) {
+						p.tankBattles.remove(t);
+					}
+				} else if (t.type == TankType.MEDIUM) {
+					if (t.tier > maxMT) {
+						p.tankBattles.remove(t);
+					}
+				} else if (t.type == TankType.LIGHT) {
+					if (t.tier > maxLT) {
+						p.tankBattles.remove(t);
+					}
+				} else if (t.type == TankType.TD) {
+					if (t.tier > maxTD) {
+						p.tankBattles.remove(t);
+					}
+				} else if (t.type == TankType.SPG) {
+					if (t.tier > maxSPG) {
+						p.tankBattles.remove(t);
+					}
+				}
+			}
+		}
+		for (PlayerInfo p : players) {
+			p.maxEffectiveTier = 0;
+			for (Tank t : p.tankBattles.keySet()) {
+				if (t.tier > 0 && t.tier <= 10) {
+					++p.tanksByTier[t.tier - 1];
+					if (t.effectiveTier() > p.maxEffectiveTier) {
+						p.maxEffectiveTier = t.tier;
+					}
+				}
+			}
+			for (int i = 0; i < 10; ++i) {
+				if (p.tanksByTier[i] > 0) {
+					totalTiers[i] += p.tanksByTier[i];
+					++maxTiers[i];
+				}
+			}
+		}
+	}
+
 	public static void main(String[] args) {
-		//GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/", "StalkersofMayhem");
-		GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/33-World_of_Tanks_Classic,_Season_I/", "StalkersofMayhem");
+		GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/", "StalkersofMayhem");
+		//GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/33-World_of_Tanks_Classic,_Season_I/", "StalkersofMayhem");
 		t.run();
 		System.out.println("found? " + t.isFound);
 

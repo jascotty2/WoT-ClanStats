@@ -2,6 +2,7 @@ package me.jascotty2.clanstats;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
@@ -60,6 +61,10 @@ public class QueryParser {
 			return res.toString();
 		} catch (FileNotFoundException e) {
 			// 404
+		} catch (IOException ex) {
+			if (ex.getMessage() != null && !ex.getMessage().contains("HTTP response code: 403")) {
+				Logger.getLogger(QueryParser.class.getName()).log(Level.SEVERE, null, ex);
+			}
 		} catch (Exception ex) {
 			Logger.getLogger(QueryParser.class.getName()).log(Level.SEVERE, null, ex);
 		}
@@ -295,7 +300,7 @@ public class QueryParser {
 	}
 
 	public static String getDataWithoutTags(String data) {
-		data = data.replace("&nbsp;", " ");
+		data = data.replace("&nbsp;", " ").replace("&amp;", "&");
 		if (data.contains("<")) {
 			StringBuilder dat = new StringBuilder();
 			boolean in_tag = false;
