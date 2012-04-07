@@ -1,3 +1,20 @@
+/**
+ * Copyright (C) 2012 Jacob Scott <jascottytechie@gmail.com>
+ * Description: Provides methods for getting information about clans or tournament teams
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package me.jascotty2.clanstats;
 
 import java.awt.Desktop;
@@ -16,74 +33,43 @@ public class Main implements GetClan.ScanCallback {
 	static GetClan c = null;
 	static boolean printDone = false, deamonMode = false;
 	static String saveDir = "saves";
+	static String tournSaveDir = "";
+	static String fileName = "%c[%a].html";
 
 	public static void main(String[] args) {
-		if (args.length == 1) {
-
-			c = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/33-World_of_Tanks_Classic,_Season_I/", "StalkersofMayhem");//"75655", "StalkersofMayhem");
-			c.callback = m;
-			c.isFound = true;
-			c.max_threads = 5;
-
-			c.run();
-
-			if (!c.isFound) {
-				System.out.println("not found: " + c.requestData);
-				return;
-			} else {
-				System.out.println("found: " + c.requestData);
-				System.out.println("name: " + c.clanName);
-				System.out.println("last modified: " + c.created);
-				System.out.println("members: " + c.numPlayers);
-				System.out.println("owner: " + c.ownerID + "  (" + c.ownerName + ")");
-				System.out.println("ID: " + c.clanID);
-
-//				System.out.println("Players: ");
-//				for(PlayerInfo p : c.players) {
-//					System.out.println(p.playername);
-//				}
-			}
-			st = System.currentTimeMillis();
-			c.lookupPlayers();
-			return;
-		}
-		// clan stats
-//		c = new GetClan("StalkersofMayhem");
-//		c.clanName = "StalkersofMayhem Season 1";
-//
-//		for (String pn : new String[]{"Borgle", "bragi365", 
-//			"Chaos7_s", "Dinotank", "Foobis", "Icansee", 
-//			"jascotty2", "johnnyybravo", "johnt69", "Juker008", 
-//			"l77ogan", "MaxShadow", "MissBehaving", "MLVDVIP", 
-//			"MortalEnigma", "MrWar123", "Oxmathus", "Scotty_123", 
-//			"StalkerofMayhem", "white91mustang"}) {
-//			PlayerInfo p = new PlayerInfo();
-//			p.loadStats(pn, "com");
-//			if (p.playerID != null) {
-//				c.players.add(p);
-//			}
+//		if (args.length == 0) {
+//			main(new String[]{"stalkers", "saves", "true", "%c.dat", "http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/"});
+//			return;
 //		}
-//		
 
 		st = System.currentTimeMillis();
 
 		if (args.length > 0) {
-			clan = Str.concatStr(args, " ");
+			clan = args[0];
+			if (args.length > 1) {
+				// second arg being save dir
+				tournSaveDir = saveDir = args[1];
+			}
+			if (args.length > 2) {
+				// third is if to debug text and open browser
+				deamonMode = CheckInput.GetBoolean(args[2], false);
+			}
+			if (args.length > 3) {
+				// fourth is the output filename (if ends in .dat, outputs all data)
+				fileName = args[3];
+			}
 			st = System.currentTimeMillis();
-			c = new GetClan(clan);
+			if (args.length > 4) {
+				// 5th is fot tournament URL, if applicable
+				c = new GetTournamentTeam(args[4], clan);
+			} else {
+				c = new GetClan(clan);
+			}
 			c.callback = m;
 			c.run();
 			if (!c.isFound) {
 				System.out.println("Error: the clan '" + clan + "' was not found");
 				return;
-			}
-			if (args.length > 1) {
-				// second arg being save dir
-				saveDir = args[1];
-			}
-			if (args.length > 2) {
-				// third is if to debug text and open browser
-				deamonMode = CheckInput.GetBoolean(args[2], false);
 			}
 		} else {
 			do {
@@ -134,6 +120,9 @@ public class Main implements GetClan.ScanCallback {
 					c.run();
 				}
 			} while (!c.isFound);
+			if (c instanceof GetTournamentTeam) {
+				fileName = "%c.html";
+			}
 		}
 		c.callback = m;
 		c.lookupPlayers();
@@ -144,13 +133,13 @@ public class Main implements GetClan.ScanCallback {
 
 		try {
 			if (!deamonMode) {
-				if(c instanceof GetTournamentTeam) {
+				if (c instanceof GetTournamentTeam) {
 					((GetTournamentTeam) c).applyTierLimits();
 				}
 				long end = System.currentTimeMillis();
 
 
-				System.out.println("results: (completed " + (c.numPlayers + 2) + " queries in " + ((end - st) / 1000) + " seconds)");
+				System.out.println("results: (scan completed in " + ((end - st) / 1000) + " seconds)");
 				System.out.println("");
 				System.out.println("name: " + c.clanName);
 				System.out.println("tag: " + c.clanTag);
@@ -192,8 +181,6 @@ public class Main implements GetClan.ScanCallback {
 					}
 					System.out.println(line.toString());
 				}
-			} else {
-				c.sortPlayersByTankAndRating();
 			}
 
 			/*
@@ -217,24 +204,52 @@ public class Main implements GetClan.ScanCallback {
 			}
 			System.out.println("\t);");
 			 */
-			File dir = new File(saveDir);
+			File dir;
 			File f;
-			if (!saveDir.isEmpty() && !saveDir.equals(".")) {
-				dir.mkdirs();
-			}
+			String fn = fileName.replace("%c", c.clanName == null ? "" : c.clanName).
+					replace("%a", c.clanTag == null ? "" : c.clanTag);
 			if (c instanceof GetTournamentTeam) {
-				dir = new File(dir, "teams" + File.separator + ((GetTournamentTeam) c).tournamentID
-						+ (((GetTournamentTeam) c).eventName.isEmpty() ? "" : "-" + ((GetTournamentTeam) c).eventName.replace(" ", "_")));
+				if (tournSaveDir.isEmpty()) {
+					dir = new File(saveDir + File.separator + "teams"
+							+ File.separator + ((GetTournamentTeam) c).tournamentID
+							+ (((GetTournamentTeam) c).eventName.isEmpty() ? ""
+							: "-" + ((GetTournamentTeam) c).eventName.replace(" ", "_")));
+				} else {
+					dir = new File(tournSaveDir.replace("%i", ((GetTournamentTeam) c).tournamentID).
+							replace("%n", ((GetTournamentTeam) c).eventName.replace(" ", "_")));
+				}
 				dir.mkdirs();
-				f = new File(dir, c.clanName + ".html");
+				f = new File(dir, fn);
 			} else {
-				f = new File(dir, c.clanName + " [" + c.clanTag + "].html");
+				dir = new File(saveDir);
+				dir.mkdirs();
+				f = new File(dir, fn);
 			}
-			System.out.println("writing to file: " + f.getPath());
-			OutputHTML.writeFile(c, f, !deamonMode);
+			
+			if (c instanceof GetTournamentTeam) {
+				if (tournSaveDir.isEmpty()) {
+					dir = new File(dir, "teams" + File.separator + ((GetTournamentTeam) c).tournamentID
+							+ (((GetTournamentTeam) c).eventName.isEmpty() ? "" : "-" + ((GetTournamentTeam) c).eventName.replace(" ", "_")));
+				} else {
+					dir = new File(dir, "teams" + File.separator + ((GetTournamentTeam) c).tournamentID
+							+ (((GetTournamentTeam) c).eventName.isEmpty() ? "" : "-" + ((GetTournamentTeam) c).eventName.replace(" ", "_")));
+				}
+				dir.mkdirs();
+				f = new File(dir, fn);
+			} else {
+				f = new File(dir, fn);
+			}
 			if (!deamonMode) {
-				System.out.println("opening in default browser..");
-				Desktop.getDesktop().browse(f.toURI());
+				System.out.println("writing to file: " + f.getPath());
+			}
+			if (fn.toLowerCase().endsWith(".htm") || fn.toLowerCase().endsWith(".html")) {
+				OutputHTML.writeFile(c, f, !deamonMode);
+				if (!deamonMode) {
+					System.out.println("opening in default browser..");
+					Desktop.getDesktop().browse(f.toURI());
+				}
+			} else {
+				OutputDat.writeFile(c, f);
 			}
 		} catch (Exception e) {
 			Logger.getAnonymousLogger().log(Level.SEVERE, e.getMessage(), e);

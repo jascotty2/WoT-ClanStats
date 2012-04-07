@@ -1,3 +1,20 @@
+/**
+ * Copyright (C) 2012 Jacob Scott <jascottytechie@gmail.com>
+ * Description: Information about a Player
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package me.jascotty2.clanstats;
 
 import java.text.ParseException;
@@ -14,7 +31,6 @@ import me.jascotty2.lib.io.CheckInput;
 
 public class PlayerInfo {
 
-	private final static String tiers[] = new String[]{"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
 	public String playername, playerID, clan, position, lastPlayed;
 	public BattleStats totals = new BattleStats(), globalRating = new BattleStats();
 	public int playerRating;
@@ -120,7 +136,7 @@ public class PlayerInfo {
 		totals.maxExp = QueryParser.getStatInt(data, "Maximum Experience per Battle", numberNW, start);
 		start = data.indexOf("Rating", start);
 		playerRating = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Global Rating", 1, start), Integer.MAX_VALUE);
-		globalRating.victories = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Victories/Battles", 1, start), Integer.MAX_VALUE);
+		globalRating.hitRatio = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Victories/Battles", 1, start), Integer.MAX_VALUE);
 		globalRating.avgExp = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Average Experience per Battle", 1, start), Integer.MAX_VALUE);
 		globalRating.victories = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Victories", 1, start), Integer.MAX_VALUE);
 		globalRating.battles = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Battles Participated", 1, start), Integer.MAX_VALUE);
@@ -181,8 +197,8 @@ public class PlayerInfo {
 	}
 
 	private int tierStrToTier(String num) {
-		for (int i = 0; i < tiers.length; ++i) {
-			if (num.equalsIgnoreCase(tiers[i])) {
+		for (int i = 0; i < TankType.tiers.length; ++i) {
+			if (num.equalsIgnoreCase(TankType.tiers[i])) {
 				return i + 1;
 			}
 		}

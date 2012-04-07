@@ -1,3 +1,20 @@
+/**
+ * Copyright (C) 2012 Jacob Scott <jascottytechie@gmail.com>
+ * Description: Methods to obtain information about a tournament and team
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package me.jascotty2.clanstats;
 
 import java.util.Date;
@@ -78,7 +95,14 @@ public class GetTournamentTeam extends GetClan {
 			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
 			for (Map<String, Object> dat : data) {
 				if (dat.get("id").toString().equals(tournamentID)) {
+					for(String k : dat.keySet()) {
+						System.out.println(k + ": " + dat.get(k));
+					}
 					eventName = (String) dat.get("title");
+					emblemURL = (String) dat.get("logo_url");
+					if(emblemURL != null && !emblemURL.isEmpty()) {
+						emblemURL = "http://worldoftanks." + server + emblemURL;
+					}
 					//  maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
 					String desc = QueryParser.getDataWithoutTags(
 							((String) dat.get("description")).replace("\\r", "\r").replace("\\n", "\n"));
@@ -87,7 +111,6 @@ public class GetTournamentTeam extends GetClan {
 					maxLT = getMax(desc, "Light tank - ", maxLT);
 					maxTD = getMax(desc, "Tank Destroyer - ", maxTD);
 					maxSPG = getMax(desc, "SPG - ", maxSPG);
-
 					return true;
 				}
 			}
@@ -258,13 +281,5 @@ public class GetTournamentTeam extends GetClan {
 				}
 			}
 		}
-	}
-
-	public static void main(String[] args) {
-		GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/", "StalkersofMayhem");
-		//GetTournamentTeam t = new GetTournamentTeam("http://worldoftanks.com/uc/tournaments/33-World_of_Tanks_Classic,_Season_I/", "StalkersofMayhem");
-		t.run();
-		System.out.println("found? " + t.isFound);
-
 	}
 }
