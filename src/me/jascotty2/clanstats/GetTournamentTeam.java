@@ -29,7 +29,7 @@ public class GetTournamentTeam extends GetClan {
 	String eventID = "", regEventID = "", tournamentID = "",
 			eventName = "";
 	boolean needsPassword = false;
-	int maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
+	int max = -1, maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
 	//boolean active = false;
 
 	public GetTournamentTeam(String tournamentID, String tag) {
@@ -106,6 +106,7 @@ public class GetTournamentTeam extends GetClan {
 					//  maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
 					String desc = QueryParser.getDataWithoutTags(
 							((String) dat.get("description")).replace("\\r", "\r").replace("\\n", "\n"));
+					max = getMax(desc, "maximum total of ", max);
 					maxHT = getMax(desc, "Heavy tank - ", maxHT);
 					maxMT = getMax(desc, "Medium tank - ", maxMT);
 					maxLT = getMax(desc, "Light tank - ", maxLT);
@@ -120,7 +121,7 @@ public class GetTournamentTeam extends GetClan {
 	}
 
 	private int getMax(String data, String search, int def) {
-		int i = data.indexOf(search);
+		int i = data.toLowerCase().indexOf(search.toLowerCase());
 		if (i != -1) {
 			StringBuilder n = new StringBuilder();
 			for (; i < data.length(); ++i) {

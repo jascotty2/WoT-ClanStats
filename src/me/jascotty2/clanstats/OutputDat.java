@@ -51,7 +51,15 @@ public class OutputDat {
 			out.write("owner: " + c.ownerID + "\n#  (" + c.ownerName + ")\n");
 			out.write("clanNum: " + c.clanID + "\n");
 			out.write("emblem: " + c.emblemURL + "\n");
-
+			if(c instanceof GetTournamentTeam) {
+				out.write("maxTier:\n");
+				out.write("\ttotal: " + ((GetTournamentTeam)c).max + "\n");
+				out.write("\tHT: " + ((GetTournamentTeam)c).maxHT + "\n");
+				out.write("\tMT: " + ((GetTournamentTeam)c).maxMT + "\n");
+				out.write("\tLT: " + ((GetTournamentTeam)c).maxLT + "\n");
+				out.write("\tTD: " + ((GetTournamentTeam)c).maxTD + "\n");
+				out.write("\tSPG: " + ((GetTournamentTeam)c).maxSPG + "\n");
+			}
 			out.write("total provinces: " + c.provinces.size() + "\n");
 			out.write("total income: " + c.clanIncome + "\n");
 
