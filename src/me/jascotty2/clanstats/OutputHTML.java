@@ -153,7 +153,7 @@ public class OutputHTML {
 			outStream = new FileWriter(f);
 			out = new BufferedWriter(outStream);
 		} catch (Exception ex) {
-			Logger.getLogger(OutputHTML.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(OutputHTML.class.getName()).log(Level.SEVERE, "Error Opening output file ", ex);
 			JOptionPane.showMessageDialog(null, "Error Opening output file: " + ex.getMessage(),
 					"IO Error", JOptionPane.ERROR_MESSAGE);
 			return;

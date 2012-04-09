@@ -51,7 +51,7 @@ public class GetTournamentTeam extends GetClan {
 				if (url.contains("registrations")) {
 					// reset to format, just in case
 					url = url.substring(0, url.indexOf("registrations"));
-					System.out.println(url);
+					//System.out.println(url);
 				}
 				url += "registrations/";
 				regEventID = getEventID(url + (CheckInput.GetInt(tournamentID, 3) - 2) + "-Registration/");
@@ -95,9 +95,9 @@ public class GetTournamentTeam extends GetClan {
 			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
 			for (Map<String, Object> dat : data) {
 				if (dat.get("id").toString().equals(tournamentID)) {
-					for(String k : dat.keySet()) {
-						System.out.println(k + ": " + dat.get(k));
-					}
+//					for(String k : dat.keySet()) {
+//						System.out.println(k + ": " + dat.get(k));
+//					}
 					eventName = (String) dat.get("title");
 					emblemURL = (String) dat.get("logo_url");
 					if(emblemURL != null && !emblemURL.isEmpty()) {
@@ -111,6 +111,7 @@ public class GetTournamentTeam extends GetClan {
 					maxLT = getMax(desc, "Light tank - ", maxLT);
 					maxTD = getMax(desc, "Tank Destroyer - ", maxTD);
 					maxSPG = getMax(desc, "SPG - ", maxSPG);
+					
 					return true;
 				}
 			}

@@ -41,7 +41,7 @@ public class OutputDat {
 			return;
 		}
 		try {
-			out.write("tag: " + c.clanTag + "\n");
+			out.write("tag: " + OutputHTML.nonNull(c.clanTag) + "\n");
 			out.write("name: " + c.clanName + "\n");
 			out.write("generated: " + System.currentTimeMillis() + "\n");
 			out.write("# (" + (new Date()) + ")\n");

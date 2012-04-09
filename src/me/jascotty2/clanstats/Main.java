@@ -38,7 +38,8 @@ public class Main implements GetClan.ScanCallback {
 
 	public static void main(String[] args) {
 //		if (args.length == 0) {
-//			main(new String[]{"stalkers", "saves", "true", "%c.dat", "http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/"});
+//			//main(new String[]{"stalkers", "saves", "true", "%c.dat", "http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/"});
+//			main(new String[]{"37th a-team", ".", "true", "http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/"});
 //			return;
 //		}
 
@@ -49,6 +50,9 @@ public class Main implements GetClan.ScanCallback {
 			if (args.length > 1) {
 				// second arg being save dir
 				tournSaveDir = saveDir = args[1];
+				if (tournSaveDir.isEmpty()) {
+					saveDir = ".";
+				}
 			}
 			if (args.length > 2) {
 				// third is if to debug text and open browser
@@ -56,19 +60,30 @@ public class Main implements GetClan.ScanCallback {
 			}
 			if (args.length > 3) {
 				// fourth is the output filename (if ends in .dat, outputs all data)
-				fileName = args[3];
+				if (args[3].toLowerCase().startsWith("http://")) {
+					// unless is a tournament
+					c = new GetTournamentTeam(args[3], clan);
+					fileName = "%c.html";
+				} else {
+					fileName = args[3];
+				}
+
 			}
 			st = System.currentTimeMillis();
-			if (args.length > 4) {
-				// 5th is fot tournament URL, if applicable
-				c = new GetTournamentTeam(args[4], clan);
-			} else {
-				c = new GetClan(clan);
+			if (c == null) {
+				if (args.length > 4) {
+					// 5th is fot tournament URL, if applicable
+					c = new GetTournamentTeam(args[4], clan);
+				} else {
+					c = new GetClan(clan);
+				}
 			}
 			c.callback = m;
 			c.run();
 			if (!c.isFound) {
-				System.out.println("Error: the clan '" + clan + "' was not found");
+				System.out.println("Error: the "
+						+ (c instanceof GetTournamentTeam ? "team" : "clan ")
+						+ "'" + clan + "' was not found");
 				return;
 			}
 		} else {
@@ -130,14 +145,12 @@ public class Main implements GetClan.ScanCallback {
 
 	@Override
 	public void ScanDone() {
-
 		try {
+			if (c instanceof GetTournamentTeam) {
+				((GetTournamentTeam) c).applyTierLimits();
+			}
 			if (!deamonMode) {
-				if (c instanceof GetTournamentTeam) {
-					((GetTournamentTeam) c).applyTierLimits();
-				}
 				long end = System.currentTimeMillis();
-
 
 				System.out.println("results: (scan completed in " + ((end - st) / 1000) + " seconds)");
 				System.out.println("");
@@ -225,20 +238,7 @@ public class Main implements GetClan.ScanCallback {
 				dir.mkdirs();
 				f = new File(dir, fn);
 			}
-			
-			if (c instanceof GetTournamentTeam) {
-				if (tournSaveDir.isEmpty()) {
-					dir = new File(dir, "teams" + File.separator + ((GetTournamentTeam) c).tournamentID
-							+ (((GetTournamentTeam) c).eventName.isEmpty() ? "" : "-" + ((GetTournamentTeam) c).eventName.replace(" ", "_")));
-				} else {
-					dir = new File(dir, "teams" + File.separator + ((GetTournamentTeam) c).tournamentID
-							+ (((GetTournamentTeam) c).eventName.isEmpty() ? "" : "-" + ((GetTournamentTeam) c).eventName.replace(" ", "_")));
-				}
-				dir.mkdirs();
-				f = new File(dir, fn);
-			} else {
-				f = new File(dir, fn);
-			}
+
 			if (!deamonMode) {
 				System.out.println("writing to file: " + f.getPath());
 			}
