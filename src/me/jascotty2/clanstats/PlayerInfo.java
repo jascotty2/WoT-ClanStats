@@ -32,7 +32,7 @@ import me.jascotty2.lib.io.CheckInput;
 public class PlayerInfo {
 
 	public String playername, playerID, clan, position, lastPlayed;
-	public BattleStats totals = new BattleStats(), globalRating = new BattleStats();
+	public BattleStats totals = new BattleStats(), ratingStats = new BattleStats();
 	public int playerRating;
 	public Map<Tank, BattleStats> tankBattles = new HashMap<Tank, BattleStats>();
 	public int[] tanksByTier = new int[10];
@@ -136,16 +136,16 @@ public class PlayerInfo {
 		totals.maxExp = QueryParser.getStatInt(data, "Maximum Experience per Battle", numberNW, start);
 		start = data.indexOf("Rating", start);
 		playerRating = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Global Rating", 1, start), Integer.MAX_VALUE);
-		globalRating.hitRatio = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Victories/Battles", 1, start), Integer.MAX_VALUE);
-		globalRating.avgExp = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Average Experience per Battle", 1, start), Integer.MAX_VALUE);
-		globalRating.victories = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Victories", 1, start), Integer.MAX_VALUE);
-		globalRating.battles = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Battles Participated", 1, start), Integer.MAX_VALUE);
-		globalRating.captured = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Capture Points", 1, start), Integer.MAX_VALUE);
-		globalRating.damage = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Damage", 1, start), Integer.MAX_VALUE);
-		globalRating.defense = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Defense Points", 1, start), Integer.MAX_VALUE);
-		globalRating.destroyed = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Targets Destroyed", 1, start), Integer.MAX_VALUE);
-		globalRating.spotted = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Targets Detected", 1, start), Integer.MAX_VALUE);
-		globalRating.totalExp = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Total Experience", 1, start), Integer.MAX_VALUE);
+		ratingStats.hitRatio = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Victories/Battles", 1, start), Integer.MAX_VALUE);
+		ratingStats.avgExp = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Average Experience per Battle", 1, start), Integer.MAX_VALUE);
+		ratingStats.victories = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Victories", 1, start), Integer.MAX_VALUE);
+		ratingStats.battles = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Battles Participated", 1, start), Integer.MAX_VALUE);
+		ratingStats.captured = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Capture Points", 1, start), Integer.MAX_VALUE);
+		ratingStats.damage = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Damage", 1, start), Integer.MAX_VALUE);
+		ratingStats.defense = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Defense Points", 1, start), Integer.MAX_VALUE);
+		ratingStats.destroyed = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Targets Destroyed", 1, start), Integer.MAX_VALUE);
+		ratingStats.spotted = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Targets Detected", 1, start), Integer.MAX_VALUE);
+		ratingStats.totalExp = CheckInput.GetInt(QueryParser.getDoubleStatVal(data, "Total Experience", 1, start), Integer.MAX_VALUE);
 
 		start = data.indexOf("Vehicles", start);
 		// vehicle tier labels start in this data cell class

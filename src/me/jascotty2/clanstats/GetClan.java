@@ -73,7 +73,7 @@ public class GetClan implements Runnable, Cloneable {
 
 			// now ask for the info
 			requestData = QueryParser.get("http://worldoftanks." + server
-					+ "/community/clans/?type=table&offset=0&limit=10&order_by=name&search="
+					+ "/community/clans/?type=table&offset=0&limit=100&order_by=name&search="
 					+ searchTag + "&echo=2&id=clans_index");
 
 			// data should be ok if returned success

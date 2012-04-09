@@ -83,7 +83,7 @@ public class OutputDat {
 
 			for (PlayerInfo p : c.players) {
 				out.write("\t" + p.playername + ":\n");
-				out.write("\t\tID:" + p.playerID + "\n");
+				out.write("\t\tID: " + p.playerID + "\n");
 				if (p.is_banned) {
 					out.write("\t\tBanned from Clan\n");
 				}
@@ -115,16 +115,16 @@ public class OutputDat {
 					out.write("\t\t\tMax Exp: " + p.totals.maxExp + "\n");
 					out.write("\t\tRating: \n");
 					out.write("\t\t\tGR: " + p.playerRating + "\n");
-					out.write("\t\t\tW/B: " + p.globalRating.hitRatio + "\n");
-					out.write("\t\t\tE/B: " + p.globalRating.avgExp + "\n");
-					out.write("\t\t\tWIN: " + p.globalRating.victories + "\n");
-					out.write("\t\t\tGPL: " + p.globalRating.battles + "\n");
-					out.write("\t\t\tCPT: " + p.globalRating.captured + "\n");
-					out.write("\t\t\tDMG: " + p.globalRating.damage + "\n");
-					out.write("\t\t\tDPT: " + p.globalRating.defense + "\n");
-					out.write("\t\t\tFRG: " + p.globalRating.destroyed + "\n");
-					out.write("\t\t\tSPT: " + p.globalRating.spotted + "\n");
-					out.write("\t\t\tEXP: " + p.globalRating.totalExp + "\n");
+					out.write("\t\t\tW/B: " + p.ratingStats.hitRatio + "\n");
+					out.write("\t\t\tE/B: " + p.ratingStats.avgExp + "\n");
+					out.write("\t\t\tWIN: " + p.ratingStats.victories + "\n");
+					out.write("\t\t\tGPL: " + p.ratingStats.battles + "\n");
+					out.write("\t\t\tCPT: " + p.ratingStats.captured + "\n");
+					out.write("\t\t\tDMG: " + p.ratingStats.damage + "\n");
+					out.write("\t\t\tDPT: " + p.ratingStats.defense + "\n");
+					out.write("\t\t\tFRG: " + p.ratingStats.destroyed + "\n");
+					out.write("\t\t\tSPT: " + p.ratingStats.spotted + "\n");
+					out.write("\t\t\tEXP: " + p.ratingStats.totalExp + "\n");
 					out.write("\t\tVehicles: \n");
 					for (Tank t : p.getSortedTanks()) {
 						out.write("\t\t\t" + t.name + ": "

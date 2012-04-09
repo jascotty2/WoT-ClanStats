@@ -168,12 +168,15 @@ public class OutputHTML {
 		String server = "http://worldoftanks." + c.server;
 		StringBuilder tierTableData = new StringBuilder("\n");
 		for (int i = 9; i > 0; --i) {
-			int last24 = 0, num = 0;
+			int lastH = 0, last24 = 0, num = 0;
 			for (PlayerInfo p : c.players) {
 				if (p.maxEffectiveTier == i + 1) {
 					++num;
 					float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
 					if (hago <= 24) {
+						if(hago <= 1){
+							++lastH;
+						}
 						++last24;
 					}
 				}
@@ -181,7 +184,7 @@ public class OutputHTML {
 			tierTableData.append("<tr title=\"header=[Active Tier ").
 					append(i + 1).
 					append("'s:]" + "body=[").
-					append(last24).append(" / ").append(num).
+					append(lastH).append(" / ").append(last24).append(" / ").append(num).
 					append("]\"><td>").
 					append(String.valueOf(i + 1)).
 					append("</td><td>").
