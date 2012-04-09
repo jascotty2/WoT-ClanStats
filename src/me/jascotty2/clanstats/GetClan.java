@@ -85,16 +85,19 @@ public class GetClan implements Runnable, Cloneable {
 				return;
 			}
 			Map<String, Object> dat = null;
-			if(data.size() > 1) {
+
+			if (data.size() > 1) {
 				// search for exact
-				for(Map<String, Object> d : data) {
-					if(((String)d.get("abbreviation")).equalsIgnoreCase(searchTag)
-							|| ((String)d.get("name")).equalsIgnoreCase(searchTag)) {
+				for (Map<String, Object> d : data) {
+					if (((String) d.get("abbreviation")).equalsIgnoreCase(searchTag)
+							|| ((String) d.get("name")).equalsIgnoreCase(searchTag)) {
 						dat = d;
 						break;
 					}
 				}
-				if(dat == null) return;
+				if (dat == null) {
+					return;
+				}
 			} else {
 				dat = data.get(0);
 			}
@@ -132,7 +135,7 @@ public class GetClan implements Runnable, Cloneable {
 		clanIncome = 0;
 
 		String res = QueryParser.get("http://worldoftanks." + server + "/community/clans/"
-				+ clanID + "/provinces/?type=table&offset=0&limit=1000&order_by=name&search=&echo=1&id=js-provinces-table");
+				+ clanID + "/provinces/?type=table&offset=0&limit=1000&order_by=name&echo=1&id=js-provinces-table");
 
 		if (res == null) {
 			isFound = false;
@@ -140,20 +143,21 @@ public class GetClan implements Runnable, Cloneable {
 			List<Map<String, Object>> data = QueryParser.getItemLists("items", res);
 			if (data != null && !data.isEmpty()) {
 				try {
-					Map<String, Object> dat = data.get(0);
-					ProvinceInfo p = new ProvinceInfo();
-					p.id = (String) dat.get("id");
-					p.name = (String) dat.get("name");
-					p.map = (String) dat.get("arena_name");
-					p.mapID = dat.get("arena_id").toString();
-					p.setBattleTime(dat.get("prime_time").toString());
-					p.combatsRunning = (Boolean) dat.get("combats_running");
-					p.isAttacked = (Boolean) dat.get("attacked");
-					p.isCapital = (Boolean) dat.get("capital");
-					p.setOccupancy(dat.get("occupancy_time").toString());
-					p.revenue = (Integer) dat.get("revenue");
-					clanIncome += p.revenue;
-					provinces.add(p);
+					for (Map<String, Object> dat : data) {
+						ProvinceInfo p = new ProvinceInfo();
+						p.id = (String) dat.get("id");
+						p.name = (String) dat.get("name");
+						p.map = (String) dat.get("arena_name");
+						p.mapID = dat.get("arena_id").toString();
+						p.setBattleTime(dat.get("prime_time").toString());
+						p.combatsRunning = (Boolean) dat.get("combats_running");
+						p.isAttacked = (Boolean) dat.get("attacked");
+						p.isCapital = (Boolean) dat.get("capital");
+						p.setOccupancy(dat.get("occupancy_time").toString());
+						p.revenue = (Integer) dat.get("revenue");
+						clanIncome += p.revenue;
+						provinces.add(p);
+					}
 				} catch (Throwable t) {
 					System.out.println("ERROR: " + Str.getStackStr(t));
 				}
