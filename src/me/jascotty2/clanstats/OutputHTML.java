@@ -195,7 +195,7 @@ public class OutputHTML {
 		}
 
 		StringBuilder tanksTableData = new StringBuilder("\n");
-		int last24 = 0;
+		int last24 = 0, lastH = 0;
 		for (PlayerInfo p : c.players) {
 			tanksTableData.append("<tr><td class=\"n\" ").
 					append("title=\"header=[Player Stats: (").
@@ -227,6 +227,7 @@ public class OutputHTML {
 			if (hago <= 1) {
 				tanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
 						append(String.valueOf((int) hago)).append("</div>");
+				++lastH;
 			} else if (hago <= 2) {
 				tanksTableData.append("<div class=\"tm\" style=\"background-color: #669900; color: #000;\">").
 						append(String.valueOf((int) hago)).append("</div>");
@@ -286,7 +287,8 @@ public class OutputHTML {
 					replace("%%%%%%Income%%%%%%", String.valueOf(c.clanIncome)).
 					replace("%%%%%%TierTableData%%%%%%", tierTableData.toString()).
 					replace("%%%%%%TanksTableData%%%%%%", tanksTableData.toString()).
-					replace("%%%%%%Active%%%%%%", String.valueOf(last24)));
+					replace("%%%%%%Active1%%%%%%", String.valueOf(lastH)).
+					replace("%%%%%%Active24%%%%%%", String.valueOf(last24)));
 		} catch (IOException ex) {
 			Logger.getLogger(OutputHTML.class.getName()).log(Level.SEVERE, null, ex);
 		} finally {

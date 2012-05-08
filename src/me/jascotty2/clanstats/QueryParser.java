@@ -131,7 +131,7 @@ public class QueryParser {
 	 */
 	public static List<Map<String, Object>> getItemLists(String key, String data) {
 		ArrayList<Map<String, Object>> lists = null;
-		key = "\"" + key + "\":[";
+		key = "\"" + key + "\":";
 		int i = data.indexOf(key);
 		if (i != -1) {
 			try {

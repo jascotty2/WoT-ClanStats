@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import me.jascotty2.lib.io.CheckInput;
+import me.jascotty2.lib.util.ArrayManip;
 import me.jascotty2.lib.util.Str;
 
 public class Main implements GetClan.ScanCallback {
@@ -35,50 +36,130 @@ public class Main implements GetClan.ScanCallback {
 	static String saveDir = "saves";
 	static String tournSaveDir = "";
 	static String fileName = "%c[%a].html";
+	static Character[] safeChars = new Character[]{
+		'#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ';', '<', '>', '@',
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+		'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+		'[', '}', ']', '^', '_', '`',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+		'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+		'{', '|', '}', '~'};
 
 	public static void main(String[] args) {
-//		if (args.length == 0) {
-//			//main(new String[]{"stalkers", "saves", "true", "%c.dat", "http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/"});
-//			main(new String[]{"37th a-team", ".", "true", "http://worldoftanks.com/uc/tournaments/36-Halbe_Post_meridiem_Challenge/"});
-//			return;
-//		}
-
+		
 		st = System.currentTimeMillis();
 
 		if (args.length > 0) {
-			clan = args[0];
-			if (args.length > 1) {
-				// second arg being save dir
-				tournSaveDir = saveDir = args[1];
-				if (tournSaveDir.isEmpty()) {
-					saveDir = ".";
-				}
-			}
-			if (args.length > 2) {
-				// third is if to debug text and open browser
-				deamonMode = CheckInput.GetBoolean(args[2], false);
-			}
-			if (args.length > 3) {
-				// fourth is the output filename (if ends in .dat, outputs all data)
-				if (args[3].toLowerCase().startsWith("http://")) {
-					// unless is a tournament
-					c = new GetTournamentTeam(args[3], clan);
-					fileName = "%c.html";
-				} else {
-					fileName = args[3];
-				}
+			// command: java -jar ClanStats.jar [options] <clan>
+			// options: -f <output file>	save to file. options: %c -> clan name, %a clan tag
+			//			-d <directory>		change save directory (if -f not defined)
+			//			-u <tournament url>	if is a tournament, what the url for it is
+			//			-t <#>				max number of lookup threads
+			//			--open-on-close		open the file once finished
+			deamonMode = true;
+			saveDir = ".";
 
-			}
-			st = System.currentTimeMillis();
-			if (c == null) {
-				if (args.length > 4) {
-					// 5th is fot tournament URL, if applicable
-					c = new GetTournamentTeam(args[4], clan);
+			String url = "";
+			boolean fnDef = false;
+			String error = "";
+			int maxThreads = 0;
+
+			for (int i = 0; i < args.length && error.isEmpty(); ++i) {
+				if (args[i].equalsIgnoreCase("-f") || args[i].equalsIgnoreCase("--file")) {
+					if (++i >= args.length - 1) {
+						error = "No Filename Defined";
+					} else {
+						fileName = args[i];
+						fnDef = true;
+					}
+				} else if (args[i].equalsIgnoreCase("-d")) {
+					if (++i >= args.length - 1) {
+						error = "No Directory Defined";
+					} else {
+						tournSaveDir = saveDir = args[i];
+					}
+				} else if (args[i].equalsIgnoreCase("-u")) {
+					if (++i >= args.length - 1) {
+						error = "No URL Defined";
+					} else {
+						url = args[i];
+					}
+				} else if (args[i].equalsIgnoreCase("-c") || args[i].equalsIgnoreCase("--clan")) {
+					if (++i >= args.length - 1) {
+						error = "No Clan Search Term Defined";
+					} else {
+						clan = args[i];
+					}
+				} else if (args[i].equalsIgnoreCase("-t") || args[i].equalsIgnoreCase("--max-threads")) {
+					if (++i >= args.length - 1) {
+						error = "Missing Threads Argument";
+					} else if (CheckInput.GetInt(args[i], -1) <= 0) {
+						error = "Threads Must be a Positive Number";
+					} else {
+						maxThreads = CheckInput.GetInt(args[i], 0);
+					}
+				} else if (args[i].equalsIgnoreCase("--open-on-close")) {
+					deamonMode = false;
+				} else if (args[i].equalsIgnoreCase("--help") || args[i].equalsIgnoreCase("-h")) {
+					error = "ClanStats Command Help:";
 				} else {
-					c = new GetClan(clan);
+					if (i == args.length - 1 && clan == null) {
+						clan = args[i];
+					} else {
+						error = "Invalid Option: " + args[i];
+					}
 				}
 			}
-			c.callback = m;
+
+			if (error.isEmpty() && clan == null) {
+				error = "No Clan Defined";
+			}
+
+			if (!error.isEmpty()) {
+				System.out.println(error);
+				System.out.println("Command: java -jar ClanStats.jar [options] <clan>");
+				System.out.println("Options: ");
+				System.out.println("         -f <output file> save to file");
+				System.out.println("               formatting: %c -> clan name");
+				System.out.println("                           %a -> clan tag ");
+				System.out.println("         -d <directory>");
+				System.out.println("               change default save directory");
+				System.out.println("         -u <tournament url> ");
+				System.out.println("               if is a tournament, what the url for it is");
+				System.out.println("         -t <#>");
+				System.out.println("               set the max. number of lookup threads (default 20)");
+				System.out.println("          --open-on-close  open the file once finished");
+				return;
+			}
+
+			if (fileName.contains(File.separator)) {
+				// extract dir from filename & append to dir
+				String d = fileName.substring(0, fileName.lastIndexOf(File.separator));
+				if (saveDir.equals(".")) {
+					tournSaveDir = saveDir = d;
+				} else {
+					saveDir += (saveDir.endsWith(File.separator) ? "" : File.separator) + d;
+					tournSaveDir = saveDir;
+				}
+				fileName = fileName.substring(fileName.lastIndexOf(File.separator) + 1);
+			}
+			if (!url.isEmpty() && !fnDef) {
+				fileName = "%c.html";
+			}
+
+			st = System.currentTimeMillis();
+
+			if (!url.isEmpty()) {
+				c = new GetTournamentTeam(url, clan);
+			} else {
+				c = new GetClan(clan);
+			}
+
+			if (maxThreads > 0) {
+				c.max_threads = maxThreads;
+			}
+
 			c.run();
 			if (!c.isFound) {
 				System.out.println("Error: the "
@@ -133,6 +214,9 @@ public class Main implements GetClan.ScanCallback {
 					st = System.currentTimeMillis();
 					c.searchTag = clan;
 					c.run();
+				}
+				if(!c.isFound && !(c instanceof GetTournamentTeam)) {
+					break;
 				}
 			} while (!c.isFound);
 			if (c instanceof GetTournamentTeam) {
@@ -219,7 +303,16 @@ public class Main implements GetClan.ScanCallback {
 			 */
 			File dir;
 			File f;
-			String fn = fileName.replace("%c", c.clanName == null ? "" : c.clanName).
+			String safeName = "";
+			if (c.clanName != null) {
+				for (char ch : c.clanName.toCharArray()) {
+					if (ArrayManip.indexOf(safeChars, (Character) ch) != -1) {
+						safeName += ch;
+					}
+				}
+			}
+			String fn = fileName.
+					replace("%c", safeName).
 					replace("%a", c.clanTag == null ? "" : c.clanTag);
 			if (c instanceof GetTournamentTeam) {
 				if (tournSaveDir.isEmpty()) {
