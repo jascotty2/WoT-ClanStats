@@ -30,8 +30,11 @@ public class Tank {
 
 	public Tank(int tier, String name) {
 		this.tier = tier;
-		this.name = name;
-		type = TankType.fromTankName(name);
+		// for some reason, the 'K' in KV-4 is not a ascii K
+		// (char code 1050)
+		if(name.equals("КV-4")) this.name = "KV-4";
+		else this.name = name;
+		type = TankType.fromTankName(this.name);
 		if (type == TankType.UNKNOWN) {
 			System.out.println("unknown tank: " + name);
 		}
@@ -52,7 +55,7 @@ public class Tank {
 		}
 		if (type == TankType.SPG
 				|| type == TankType.LIGHT) {
-			return (tier + 2) > 10 ? 10 : tier + (tier > 4 ? 2 : 1);
+			return (tier + 2) >= 10 ? 10 : tier + (tier > 4 ? 2 : 1);
 		}
 		return tier;
 	}

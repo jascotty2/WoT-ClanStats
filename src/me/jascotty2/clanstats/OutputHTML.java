@@ -174,7 +174,7 @@ public class OutputHTML {
 					++num;
 					float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
 					if (hago <= 24) {
-						if(hago <= 1){
+						if (hago <= 1) {
 							++lastH;
 						}
 						++last24;
@@ -197,7 +197,15 @@ public class OutputHTML {
 		StringBuilder tanksTableData = new StringBuilder("\n");
 		int last24 = 0, lastH = 0;
 		for (PlayerInfo p : c.players) {
-			tanksTableData.append("<tr><td class=\"n\" ").
+			float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+			if (hago <= 24) {
+				++last24;
+			}
+			tanksTableData.append("<tr");
+			if (hago <= 2) {
+				tanksTableData.append(" class=\"online\"");
+			}
+			tanksTableData.append("><td class=\"n\" ").
 					append("title=\"header=[Player Stats: (").
 					append(p.playername).
 					append(")]  body=[");
@@ -220,10 +228,6 @@ public class OutputHTML {
 				tanksTableData.append(p.playername);
 			}
 			tanksTableData.append("</a>");
-			float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
-			if (hago <= 24) {
-				++last24;
-			}
 			if (hago <= 1) {
 				tanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
 						append(String.valueOf((int) hago)).append("</div>");
@@ -249,7 +253,11 @@ public class OutputHTML {
 			for (Tank t : p.getSortedTanks()) {
 				// ö = \u00F6 = &#246;
 				// ä = \u00E4 = &#228;
-				tanksTableData.append("<td><div title=\"header=[").
+				tanksTableData.append("<td");
+				if(t.type == TankType.SPG) {
+					tanksTableData.append(" class=\"spg\"");
+				}
+				tanksTableData.append("><div title=\"header=[").
 						append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
 						append("] body=[(Tier ").
 						append(t.tier);

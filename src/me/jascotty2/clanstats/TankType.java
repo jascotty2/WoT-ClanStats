@@ -33,14 +33,20 @@ public enum TankType {
 	public final static String[] heavyTanks = new String[]{
 		// soviet
 		"KV",
+		"KV-1",
 		"KV-220 Beta-Test",
 		"Churchill",
 		"KV-220",
 		"KV-1S",
-		"KV-3",
+		"KV-2",
+		"T-150",
 		"IS",
+		"KV-3",
 		"IS-3",
+		"KV-4",
 		"KV-5",
+		"ST-I",
+		"IS-8",
 		"IS-4",
 		"IS-7",
 		// German
@@ -71,7 +77,9 @@ public enum TankType {
 		"AMX M4(1945)",
 		"AMX 50 100",
 		"AMX 50 120",
-		"AMX 50B"};
+		"AMX 50B",
+		// Chinese
+		"WZ-111"};
 	public final static String[] mediumTanks = new String[]{
 		// soviet
 		"T-28",
@@ -163,7 +171,9 @@ public enum TankType {
 		"AMX 40",
 		"AMX 12t",
 		"AMX 13 75",
-		"AMX 13 90"};
+		"AMX 13 90",
+		// Chinese
+		"Type 62"};
 	public final static String[] artillery = new String[]{
 		// soviet
 		"SU-18",

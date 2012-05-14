@@ -173,7 +173,7 @@ public class PlayerInfo {
 				if (t.tier > 0 && t.tier <= 10) {
 					++tanksByTier[t.tier - 1];
 					if (t.effectiveTier() > maxEffectiveTier) {
-						maxEffectiveTier = t.tier;
+						maxEffectiveTier = t.effectiveTier();
 					}
 				}
 			}

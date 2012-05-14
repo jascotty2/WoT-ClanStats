@@ -137,6 +137,9 @@ public class QueryParser {
 			try {
 				lists = new ArrayList<Map<String, Object>>();
 				i += key.length();
+				while (i < data.length() && data.charAt(i - 1) != '[') {
+					++i;
+				}
 				String dat = data.substring(i, getListStrEnd(data, i));
 				i = 1;
 				while (i > 0 && i + 1 < dat.length()) {

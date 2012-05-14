@@ -57,8 +57,12 @@
 		</div>
 		<div id="extra">
 			<div id="player-lineup">
-				<h3>Potential Clanwars Lineup:</h3>
-				<table>
+				<h3 style="display: inline-block">Potential Clanwars Lineup:</h3>
+				<div style="display: inline-block; position: relative; left: 50px">
+					<input type="checkbox" id="hide-inactive" onChange="toggleHideInactive();"> Hide Inactive Players
+					<input type="checkbox" id="show-arty" onChange="toggleHideTanks();"> Show Artilery
+				</div>
+				<table id="lineup-table">
 					<thead>
 						<tr>
 							<th>Player</th>
@@ -71,5 +75,39 @@
 		</div>
 	</div>
 </div>
+<script type="text/javascript">
+	function toggleHideInactive() {
+		try{
+			var ishidden = document.getElementById("hide-inactive").checked;
+			var table = document.getElementById("lineup-table");
+			for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
+				table.tBodies[0].rows[ti].style.display = 
+					!ishidden || (" "+table.tBodies[0].rows[ti].className).indexOf("online") != -1 ? "" : "none";
+			}
+		}catch(e){
+			alert(e);
+		}
+	}
+	function toggleHideTanks() {
+		try{
+			var ishidden = document.getElementById("show-arty").checked;
+			var table = document.getElementById("lineup-table");
+			for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
+				var hasArty = false;
+				for (ci=1; ci<table.tBodies[0].rows[ti].cells.length; ++ci) {
+					if(!ishidden || (" "+table.tBodies[0].rows[ti].cells[ci].className).indexOf("spg") != -1) {
+						hasArty = true;
+						table.tBodies[0].rows[ti].cells[ci].style.display = "";
+					} else {
+						table.tBodies[0].rows[ti].cells[ci].style.display = "none";
+					}
+				}
+				table.tBodies[0].rows[ti].style.display = hasArty ? "" : "none";
+			}
+		}catch(e){
+			alert(e);
+		}
+	}
+</script>
 </body>
 </html>

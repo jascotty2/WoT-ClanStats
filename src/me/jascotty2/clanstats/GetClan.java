@@ -82,9 +82,8 @@ public class GetClan implements Runnable, Cloneable {
 			}
 			List<Map<String, Object>> data = QueryParser.getItemLists("items", requestData);
 			if (data == null || data.isEmpty()) {
-				System.out.println("no data");
 				return;
-			} else System.out.println("data: " + requestData);
+			}
 			Map<String, Object> dat = null;
 
 			if (data.size() > 1) {
@@ -117,12 +116,6 @@ public class GetClan implements Runnable, Cloneable {
 				created = new Date((long) CheckInput.GetDouble(started, 0) * 1000);
 			}
 
-			System.out.println(clanTag);
-			System.out.println(clanName);
-			System.out.println(clanID);
-			System.out.println(numPlayers);
-			System.out.println(emblemURL);
-			
 			isFound = clanTag != null
 					&& clanName != null
 					&& clanID != null
@@ -143,7 +136,7 @@ public class GetClan implements Runnable, Cloneable {
 
 		String res = QueryParser.get("http://worldoftanks." + server + "/community/clans/"
 				+ clanID + "/provinces/?type=table&offset=0&limit=1000&order_by=name&echo=1&id=js-provinces-table");
-
+		
 		if (res == null) {
 			isFound = false;
 		} else {
