@@ -67,32 +67,32 @@ public class Main implements GetClan.ScanCallback {
 
 			for (int i = 0; i < args.length && error.isEmpty(); ++i) {
 				if (args[i].equalsIgnoreCase("-f") || args[i].equalsIgnoreCase("--file")) {
-					if (++i >= args.length - 1) {
+					if (++i > args.length - 1) {
 						error = "No Filename Defined";
 					} else {
 						fileName = args[i];
 						fnDef = true;
 					}
 				} else if (args[i].equalsIgnoreCase("-d")) {
-					if (++i >= args.length - 1) {
+					if (++i > args.length - 1) {
 						error = "No Directory Defined";
 					} else {
 						tournSaveDir = saveDir = args[i];
 					}
 				} else if (args[i].equalsIgnoreCase("-u")) {
-					if (++i >= args.length - 1) {
+					if (++i > args.length - 1) {
 						error = "No URL Defined";
 					} else {
 						url = args[i];
 					}
 				} else if (args[i].equalsIgnoreCase("-c") || args[i].equalsIgnoreCase("--clan")) {
-					if (++i >= args.length - 1) {
+					if (++i > args.length - 1) {
 						error = "No Clan Search Term Defined";
 					} else {
 						clan = args[i];
 					}
 				} else if (args[i].equalsIgnoreCase("-t") || args[i].equalsIgnoreCase("--max-threads")) {
-					if (++i >= args.length - 1) {
+					if (++i > args.length - 1) {
 						error = "Missing Threads Argument";
 					} else if (CheckInput.GetInt(args[i], -1) <= 0) {
 						error = "Threads Must be a Positive Number";
