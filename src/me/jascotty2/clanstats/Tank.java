@@ -47,8 +47,11 @@ public class Tank {
 
 	public int effectiveTier() {
 		// just in general.. nothing specific (yet..)
-		if (type == TankType.HEAVY || type == TankType.MEDIUM) {
+		if (type == TankType.HEAVY) {
 			return tier;
+		}
+		if (type == TankType.MEDIUM) {
+			return (tier + 1) >= 10 ? 10 : tier + (tier > 5 ? 1 : 0);
 		}
 		if (type == TankType.TD) {
 			return tier + 1;

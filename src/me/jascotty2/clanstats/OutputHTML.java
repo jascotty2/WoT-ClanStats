@@ -308,7 +308,7 @@ public class OutputHTML {
 			public int compare(Tank o1, Tank o2) {
 				return o1.effectiveTier() != o2.effectiveTier()
 						? o2.effectiveTier() - o1.effectiveTier()
-						: o2.type.ordinal() - o1.type.ordinal();
+						: o1.type.ordinal() - o2.type.ordinal();
 			}
 		});
 		
