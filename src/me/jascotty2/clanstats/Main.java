@@ -336,7 +336,7 @@ public class Main implements GetClan.ScanCallback {
 				System.out.println("writing to file: " + f.getPath());
 			}
 			if (fn.toLowerCase().endsWith(".htm") || fn.toLowerCase().endsWith(".html")) {
-				OutputHTML.writeFile(c, f, !deamonMode);
+				OutputHTML.writeFile(c, f);
 				if (!deamonMode) {
 					System.out.println("opening in default browser..");
 					Desktop.getDesktop().browse(f.toURI());

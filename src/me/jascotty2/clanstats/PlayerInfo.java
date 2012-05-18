@@ -179,7 +179,7 @@ public class PlayerInfo {
 			}
 			start = data.indexOf("<span class=\"level\">", start);
 		}
-	}
+	}	
 
 	public Tank[] getSortedTanks() {
 		Tank[] tanks = tankBattles.keySet().toArray(new Tank[0]);

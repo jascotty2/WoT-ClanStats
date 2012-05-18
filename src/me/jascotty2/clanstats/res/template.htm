@@ -2,22 +2,14 @@
 <html>
 <head>
 <title>Clan info for %%%%%%ClanName%%%%%%</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<style type="text/css" media="screen">
-<!--
-%%%%%%css%%%%%%
--->
-</style>
-<script type="text/javascript">
-<!--
-%%%%%%js%%%%%%
--->
-</script>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="style.css">
+<script type="text/javascript" src="boxover.js"></script>
 </head>
 <body>
 <div class="title">
 	<h1>
-		<img id="logo" src="%%%%%%LogoImg%%%%%%" height="64"/>
+		<img id="logo" src="images/wot-logo.png" height="64"/>
 		Clan info for <span id="name"><a href="%%%%%%server%%%%%%/community/clans/%%%%%%ClanID%%%%%%/">%%%%%%ClanName%%%%%%</a></span>		<br>
 		<hr> <!-- hr in h1 tag so works in IE, too.. -->
 	</h1>
@@ -26,7 +18,7 @@
 	<div class="data">
 		<div class="basic">
 			<div id="mask">
-				<img src="http://worldoftanks.com/static/3.1.0.5/common/img/common/cont-img-mask.png" 
+				<img src="images/cont-img-mask.png" 
 					alt="" onload="javascript: document.getElementById('mask').style.background='#adb5a1';">
 			</div>
 			<div id="name2">
@@ -51,17 +43,20 @@
 					<thead><tr><th>Tier</th><th>Play</th><th>Have</th></thead>
 					<tbody>%%%%%%TierTableData%%%%%%</tbody>
 				</table>
-				<p>Active in last 1 / 24 hours:<br>
-				%%%%%%Active1%%%%%% / %%%%%%Active24%%%%%%</p>
+				<p>Active in last 2 / 24 hours:<br>
+				%%%%%%Active2%%%%%% / %%%%%%Active24%%%%%%</p>
 			</div>
 		</div>
 		<div id="extra">
-			<div id="player-lineup">
+			<h2 class="tab"><a id="player-lineuptab" href="javascript:tab('player-lineup')">Player Lineup</a></h2>
+			<h2 class="tab"><a id="tank-lineuptab" href="javascript:tab('tank-lineup')">Tank Lineup</a></h2>
+			<div class="tab" id="player-lineup">
 				<h3 style="display: inline-block">Potential Clanwars Lineup:</h3>
 				<div style="display: inline-block; position: relative; left: 50px">
-					<input type="checkbox" id="hide-inactive" onChange="toggleHideInactive();"> Hide Inactive Players
-					<input type="checkbox" id="show-arty" onChange="toggleHideTanks();"> Show Artilery
+					<input type="checkbox" id="hide-inactive1" onChange="toggleHideInactive(1);"> Hide Inactive Players
+					<input type="checkbox" id="show-arty1" onChange="toggleHideTanks(1);"> Show Artilery
 				</div>
+				<div class="box">
 				<table id="lineup-table">
 					<thead>
 						<tr>
@@ -69,45 +64,146 @@
 							<th colspan="10">Tanks</th>
 						</tr>
 						</thead>
+					<tbody>%%%%%%PlayerTanksTableData%%%%%%</tbody>
+				</table>
+				</div>
+			</div>
+			<div class="tab" id="tank-lineup">
+				<h3 style="display: inline-block">Tanks in Clan:</h3>
+				<div style="display: inline-block; position: relative; left: 50px">
+					<input type="checkbox" id="hide-inactive2" onChange="toggleHideInactive(2);"> Hide Inactive Players
+					<input type="checkbox" id="show-arty2" onChange="toggleHideTanks(2);"> Show Artilery
+				</div>
+				<div class="box">
+				<table id="tank-table">
+					<thead>
+						<tr>
+							<th>Tank</th>
+							<th colspan="10">Players</th>
+						</tr>
+						</thead>
 					<tbody>%%%%%%TanksTableData%%%%%%</tbody>
 				</table>
+				</div>
 			</div>
 		</div>
 	</div>
 </div>
 <script type="text/javascript">
-	function toggleHideInactive() {
+<!--
+	function toggleHideInactive(tablenum) {
 		try{
-			var ishidden = document.getElementById("hide-inactive").checked;
-			var table = document.getElementById("lineup-table");
-			for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
-				table.tBodies[0].rows[ti].style.display = 
-					!ishidden || (" "+table.tBodies[0].rows[ti].className).indexOf("online") != -1 ? "" : "none";
-			}
-		}catch(e){
-			alert(e);
-		}
-	}
-	function toggleHideTanks() {
-		try{
-			var ishidden = document.getElementById("show-arty").checked;
-			var table = document.getElementById("lineup-table");
-			for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
-				var hasArty = false;
-				for (ci=1; ci<table.tBodies[0].rows[ti].cells.length; ++ci) {
-					if(!ishidden || (" "+table.tBodies[0].rows[ti].cells[ci].className).indexOf("spg") != -1) {
-						hasArty = true;
-						table.tBodies[0].rows[ti].cells[ci].style.display = "";
+			var ishidden = document.getElementById("hide-inactive" + tablenum).checked;
+			var table = document.getElementById(tablenum == 1 ? "lineup-table" : "tank-table");
+			if(tablenum == 1) {
+				for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
+					table.tBodies[0].rows[ti].style.display = 
+						!ishidden || (" "+table.tBodies[0].rows[ti].className).indexOf("online") != -1 ? "" : "none";
+				}
+			} else {
+				for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
+					var hasOn = false;
+					for (ci=1; ci<table.tBodies[0].rows[ti].cells.length; ++ci) {
+						if(!ishidden || (" "+table.tBodies[0].rows[ti].cells[ci].className).indexOf("online") != -1) {
+							hasOn = true;
+							table.tBodies[0].rows[ti].cells[ci].style.display = "";
+						} else {
+							table.tBodies[0].rows[ti].cells[ci].style.display = "none";
+						}
+					}
+					if(!hasOn) {
+						table.tBodies[0].rows[ti].style.display = "none";
 					} else {
-						table.tBodies[0].rows[ti].cells[ci].style.display = "none";
+						table.tBodies[0].rows[ti].style.display = 
+							!document.getElementById("show-arty" + tablenum).checked 
+							|| (" "+table.tBodies[0].rows[ti].className).indexOf("spg") != -1 ? "" : "none";
 					}
 				}
-				table.tBodies[0].rows[ti].style.display = hasArty ? "" : "none";
 			}
 		}catch(e){
 			alert(e);
 		}
 	}
+	function toggleHideTanks(tablenum) {
+		try{
+			var ishidden = document.getElementById("show-arty" + tablenum).checked;
+			var table = document.getElementById(tablenum == 1 ? "lineup-table" : "tank-table");
+			if(tablenum == 1) {
+				for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
+					var hasArty = false;
+					for (ci=1; ci<table.tBodies[0].rows[ti].cells.length; ++ci) {
+						if(!ishidden || (" "+table.tBodies[0].rows[ti].cells[ci].className).indexOf("spg") != -1) {
+							hasArty = true;
+							table.tBodies[0].rows[ti].cells[ci].style.display = "";
+						} else {
+							table.tBodies[0].rows[ti].cells[ci].style.display = "none";
+						}
+					}
+					if(!hasArty) {
+						table.tBodies[0].rows[ti].style.display = "none";
+					} else {
+						table.tBodies[0].rows[ti].style.display = 
+							!document.getElementById("hide-inactive" + tablenum).checked || (" "+table.tBodies[0].rows[ti].className).indexOf("online") != -1 ? "" : "none";
+					}
+				}
+			} else {
+				for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
+					if(!ishidden || (" "+table.tBodies[0].rows[ti].className).indexOf("spg") != -1) {
+						// only show if inactive not checked or if there are online here
+						table.tBodies[0].rows[ti].style.display = 
+							!document.getElementById("hide-inactive" + tablenum).checked
+							|| (" "+table.tBodies[0].rows[ti].className).indexOf("online") != -1 ? "" : "none";
+					} else {
+						table.tBodies[0].rows[ti].style.display = "none";
+					}
+				}
+			}
+		}catch(e){
+			alert(e);
+		}
+	}
+-->
+</script>
+<script type="text/javascript"> 
+<!--
+function tab(id) {
+	hidetab('player-lineup');
+	hidetab('tank-lineup');
+	showtab(id);
+}
+function hidetab(id) {
+//	try{
+	document.getElementById(id).style.display = "none";
+	var e = document.getElementById(id + 'tab');
+	e.style.color = '#666';
+	e.style.fontSize = '110%';
+	e.style.fontWeight = 'normal';
+//	} catch(e) {
+//		alert(e);
+//	}
+}
+function showtab(id) {
+//	try{
+	document.getElementById(id).style.display = "block";
+	var e = document.getElementById(id + 'tab');
+	e.style.color = '#39F';
+	e.style.fontSize = '130%';
+	e.style.fontWeight = 'bold';
+//	} catch(e) {
+//		alert(e);
+//	}
+}
+function toggle(id) {
+	var ele = document.getElementById(id);
+	if(ele.style.display == "block") {
+		ele.style.display = "none";
+  	}
+	else {
+		ele.style.display = "block";
+	}
+}
+tab('player-lineup');
+-->
 </script>
 </body>
 </html>

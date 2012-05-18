@@ -19,6 +19,7 @@ package me.jascotty2.clanstats;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,73 +28,76 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 public class OutputHTML {
 
-	static String logo = "data:image/jpeg;base64,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"
-			+ "/HX9sVudByytqajISc80pUGygIA4xQldTB/9k=";
-	static String logoURL = "http://worldoftanks.com/static/3.1.0.5/common/css/block/b-header/img/wot-logo.png";
-	static String css = null;
-	static String js = null;
 	static String template = null;
-	static boolean is_web = false;
 
-	static void loadRes(boolean is_web) throws Exception {
-		if (css == null) {
-			OutputHTML.is_web = is_web;
-			css = getResFile(is_web ? "style_web.css" : "style.css");
-			js = getResFile("boxover.js");
-			template = getResFile("template.htm");
-			if (css == null || css.isEmpty()
-					|| js == null || js.isEmpty()
-					|| template == null || template.isEmpty()) {
-				throw new Exception("Unexpected Error extracting files from jar");
+	static void loadRes(String folder) throws Exception {
+		String dir = folder.length() > 0 && !folder.endsWith(File.separator) ? folder + File.separator : folder;
+		template = getResFile("template.htm");
+		extractFile("style.css", dir, true);
+		extractFile("boxover.js", dir, false);
+		extractFile("bg.jpg", dir + "images", false);
+		extractFile("bg-emblem-profile.png", dir + "images", false);
+		extractFile("cont-img-mask.png", dir + "images", false);
+		extractFile("ui-bg-tile.jpg", dir + "images", false);
+		extractFile("wot-logo.png", dir + "images", false);
+	}
+
+	static void extractFile(String filen, boolean overwrite) {
+		extractFile(filen, "", overwrite);
+	}
+
+	static void extractFile(String filen, String dir, boolean overwrite) {
+		String outFile = dir.length() > 0 && !dir.endsWith(File.separator) ? dir + File.separator + filen : dir + filen;
+		if (!overwrite && (new File(outFile)).exists()) {
+			return;
+		}
+		File d = new File(dir);
+		if (d.exists() && !d.isDirectory()) {
+			return;
+		}
+		if (!d.exists()) {
+			d.mkdirs();
+		}
+		InputStream input = OutputHTML.class.getResourceAsStream("/me/jascotty2/clanstats/res/" + filen);
+		if (input != null) {
+			FileOutputStream output = null;
+
+			try {
+				output = new FileOutputStream(outFile);
+				byte[] buf = new byte[8192];
+				int length = 0;
+
+				while ((length = input.read(buf)) > 0) {
+					output.write(buf, 0, length);
+				}
+			} catch (Exception e) {
+				Logger.getAnonymousLogger().log(Level.SEVERE, null, e);
+			} finally {
+				try {
+					if (input != null) {
+						input.close();
+					}
+				} catch (Exception e) {
+				}
+				try {
+					if (output != null) {
+						output.close();
+					}
+				} catch (Exception e) {
+				}
 			}
-		} else if (OutputHTML.is_web != is_web) {
-			OutputHTML.is_web = is_web;
-			css = getResFile(is_web ? "style_web.css" : "style.css");
 		}
 	}
 
@@ -133,7 +137,7 @@ public class OutputHTML {
 		return writer.toString();
 	}
 
-	public static void writeFile(GetClan c, String dir, boolean is_web) throws Exception {
+	public static void writeFile(GetClan c, String dir) throws Exception {
 		File f;
 		if (dir != null) {
 			File d = new File(dir);
@@ -142,11 +146,11 @@ public class OutputHTML {
 		} else {
 			f = new File(c.clanName + " [" + c.clanTag + "].html");
 		}
-		writeFile(c, f, is_web);
+		writeFile(c, f);
 	}
 
-	public static void writeFile(GetClan c, File f, boolean is_web) throws Exception {
-		loadRes(is_web);
+	public static void writeFile(GetClan c, File f) throws Exception {
+		loadRes(f.getParent());
 		BufferedWriter out = null;
 		FileWriter outStream = null;
 		try {
@@ -168,7 +172,7 @@ public class OutputHTML {
 		String server = "http://worldoftanks." + c.server;
 		StringBuilder tierTableData = new StringBuilder("\n");
 		for (int i = 9; i > 0; --i) {
-			int lastH = 0, last24 = 0, num = 0;
+			int lastH = 0, last2 = 0, last24 = 0, num = 0;
 			for (PlayerInfo p : c.players) {
 				if (p.maxEffectiveTier == i + 1) {
 					++num;
@@ -177,6 +181,9 @@ public class OutputHTML {
 						if (hago <= 1) {
 							++lastH;
 						}
+						if (hago <= 2) {
+							++last2;
+						}
 						++last24;
 					}
 				}
@@ -184,7 +191,7 @@ public class OutputHTML {
 			tierTableData.append("<tr title=\"header=[Active Tier ").
 					append(i + 1).
 					append("'s:]" + "body=[").
-					append(lastH).append(" / ").append(last24).append(" / ").append(num).
+					append(last2).append(" / ").append(last24).append(" / ").append(num).
 					append("]\"><td>").
 					append(String.valueOf(i + 1)).
 					append("</td><td>").
@@ -194,77 +201,89 @@ public class OutputHTML {
 					append("</td>\n");
 		}
 
-		StringBuilder tanksTableData = new StringBuilder("\n");
-		int last24 = 0, lastH = 0;
+		//ArrayList<Tank> allTanks = new ArrayList<Tank>();
+		HashMap<Tank, ArrayList<PlayerInfo>> tankPlayers = new HashMap<Tank, ArrayList<PlayerInfo>>();
+
+		StringBuilder playerTanksTableData = new StringBuilder("\n");
+		int last24 = 0, last2 = 0, lastH = 0;
 		for (PlayerInfo p : c.players) {
+			// get tanks
+			for (Tank t : p.tankBattles.keySet()) {
+				//if(!allTanks.contains(t)) allTanks.add(t);
+				if (!tankPlayers.containsKey(t)) {
+					tankPlayers.put(t, new ArrayList<PlayerInfo>());
+				}
+				tankPlayers.get(t).add(p);
+			}
 			float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
 			if (hago <= 24) {
 				++last24;
 			}
-			tanksTableData.append("<tr");
+			playerTanksTableData.append("<tr");
 			if (hago <= 2) {
-				tanksTableData.append(" class=\"online\"");
+				++last2;
+				playerTanksTableData.append(" class=\"online\"");
 			}
-			tanksTableData.append("><td class=\"n\" ").
+			playerTanksTableData.append("><td class=\"n\" ").
 					append("title=\"header=[Player Stats: (").
 					append(p.playername).
 					append(")]  body=[");
 			if (p.is_banned) {
-				tanksTableData.append("(Player is Banned)<br>");
+				playerTanksTableData.append("(Player is Banned)<br>");
 			}
 			if (p.created == null) {
-				tanksTableData.append("(Closed Account)");
+				playerTanksTableData.append("(Closed Account)");
 			} else {
-				tanksTableData.append("GR: ").
+				playerTanksTableData.append("GR: ").
 						append(String.valueOf(p.playerRating)).
 						append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
 						append("<br>Last Battle: ").append(p.lastbattle == null ? "- ? -" : lastformat.format(p.lastbattle));
 			}
-			tanksTableData.append("]\">").append("<a href=\"").append(server).append("/community/accounts/").
+			playerTanksTableData.append("]\">").append("<a href=\"").append(server).append("/community/accounts/").
 					append(p.playerID).append("/\">");
 			if (p.is_banned) {
-				tanksTableData.append("<del>").append(p.playername).append("</del>");
+				playerTanksTableData.append("<del>").append(p.playername).append("</del>");
 			} else {
-				tanksTableData.append(p.playername);
+				playerTanksTableData.append(p.playername);
 			}
-			tanksTableData.append("</a>");
+			playerTanksTableData.append("</a>");
 			if (hago <= 1) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
+				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
 						append(String.valueOf((int) hago)).append("</div>");
 				++lastH;
 			} else if (hago <= 2) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #669900; color: #000;\">").
+				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #669900; color: #000;\">").
 						append(String.valueOf((int) hago)).append("</div>");
 			} else if (hago <= 5) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #99CC00; color: #000;\">").
+				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #99CC00; color: #000;\">").
 						append(String.valueOf((int) hago)).append("</div>");
 			} else if (hago <= 12) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #996600;\">").
+				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #996600;\">").
 						append(String.valueOf((int) hago)).append("</div>");
 			} else if (hago <= 24) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #990000;\">").
+				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #990000;\">").
 						append(String.valueOf((int) hago)).append("</div>");
 			} else if (hago <= 99) {
-				tanksTableData.append("<div class=\"tm\" style=\"background-color: #330000;\">").
+				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #330000;\">").
 						append(String.valueOf((int) hago)).append("</div>");
 			}
-			tanksTableData.append("</td>");
+			playerTanksTableData.append("</td>");
 			int n = 10;
 			for (Tank t : p.getSortedTanks()) {
 				// ö = \u00F6 = &#246;
 				// ä = \u00E4 = &#228;
-				tanksTableData.append("<td");
-				if(t.type == TankType.SPG) {
-					tanksTableData.append(" class=\"spg\"");
+				playerTanksTableData.append("<td");
+				if (t.type == TankType.SPG) {
+					playerTanksTableData.append(" class=\"spg\"");
 				}
-				tanksTableData.append("><div title=\"header=[").
+				playerTanksTableData.append("><div title=\"header=[").
 						append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
 						append("] body=[(Tier ").
 						append(t.tier);
 				if (t.type != TankType.UNKNOWN) {
-					tanksTableData.append(" ").append(t.type.getName());
+					playerTanksTableData.append(" ").append(t.type.getName());
 				}
-				tanksTableData.append(")<br>").
+				playerTanksTableData.append(")<br>").
 						append(String.valueOf(p.tankBattles.get(t).battles)).
 						append(" battles]\">").
 						append(t.name.replace("\u00F6", "&#246;")).
@@ -273,15 +292,137 @@ public class OutputHTML {
 					break;
 				}
 			}
+			playerTanksTableData.append("</tr>\n");
+		}
+
+		// end player tanks
+
+
+		StringBuilder tanksTableData = new StringBuilder("\n");
+		//for (final Map.Entry<Tank, ArrayList<PlayerInfo>> v : tankPlayers.entrySet()) {
+		
+		Tank[] tanks = tankPlayers.keySet().toArray(new Tank[0]);
+		Arrays.sort(tanks, new Comparator<Tank>() {
+
+			@Override
+			public int compare(Tank o1, Tank o2) {
+				return o1.effectiveTier() != o2.effectiveTier()
+						? o2.effectiveTier() - o1.effectiveTier()
+						: o2.type.ordinal() - o1.type.ordinal();
+			}
+		});
+		
+		for (final Tank t : tanks) {
+			tanksTableData.append("<tr");
+			
+			PlayerInfo[] players = tankPlayers.get(t).toArray(new PlayerInfo[0]);
+			Arrays.sort(players, new Comparator<PlayerInfo>() {
+
+				@Override
+				public int compare(PlayerInfo o1, PlayerInfo o2) {
+					int p1 = o1.tankBattles.get(t).battles;
+					int p2 = o2.tankBattles.get(t).battles;
+					return p1 != p2
+							? p2 - p1
+							: o2.playerRating - o1.playerRating;
+				}
+			});
+
+			int hr2 = 0, hr24 = 0;
+			for (int i = 0; i < 10 && i < players.length; ++i){ //PlayerInfo p : tankPlayers.get(t)) {
+				PlayerInfo p = players[i];
+				float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+				if (hago <= 24) {
+					++hr24;
+				}
+				if (hago <= 2) {
+					++hr2;
+				}
+			}
+			if (hr2 > 0) {
+				tanksTableData.append(" class=\"online").
+						append(t.type == TankType.SPG ? " spg" : "").
+						append("\"");
+			} else if (t.type == TankType.SPG) {
+				tanksTableData.append(" class=\"spg\"");
+			}
+			// ö = \u00F6 = &#246;
+			// ä = \u00E4 = &#228;
+			tanksTableData.append("><td title=\"header=[Tier ").
+					append(t.tier).
+					append("<br>").
+					append(t.type.getPropername()).
+					append("<br>").
+					append(hr2).append(" / ").append(hr24).append(" / ").append(tankPlayers.get(t).size()).
+					append(")]  body=[").
+					append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
+					append("]\">").
+					append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
+					append("</td>");
+
+			for (int i = 0; i < 10 && i < players.length; ++i) {
+				PlayerInfo p = players[i];
+				float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+				if (hago <= 24) {
+					++last24;
+				}
+				tanksTableData.append("<td class=\"");
+				if (hago <= 2) {
+					tanksTableData.append("online ");
+				}
+				tanksTableData.append("n\" ").
+						append("title=\"header=[Player Stats: (").
+						append(p.playername).
+						append(")]  body=[");
+				if (p.is_banned) {
+					tanksTableData.append("(Player is Banned)<br>");
+				}
+				if (p.created == null) {
+					tanksTableData.append("(Closed Account)");
+				} else {
+					tanksTableData.append("GR: ").
+							append(String.valueOf(p.playerRating)).
+							append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
+							append("<br>Last Battle: ").append(p.lastbattle == null ? "- ? -" : lastformat.format(p.lastbattle));
+				}
+				tanksTableData.append("]\">").append("<a href=\"").append(server).append("/community/accounts/").
+						append(p.playerID).append("/\">");
+				if (p.is_banned) {
+					tanksTableData.append("<del>").append(p.playername).append("</del>");
+				} else {
+					tanksTableData.append(p.playername);
+				}
+				tanksTableData.append("</a>");
+				if (hago <= 1) {
+					tanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
+							append(String.valueOf((int) hago)).append("</div>");
+					++lastH;
+				} else if (hago <= 2) {
+					tanksTableData.append("<div class=\"tm\" style=\"background-color: #669900; color: #000;\">").
+							append(String.valueOf((int) hago)).append("</div>");
+				} else if (hago <= 5) {
+					tanksTableData.append("<div class=\"tm\" style=\"background-color: #99CC00; color: #000;\">").
+							append(String.valueOf((int) hago)).append("</div>");
+				} else if (hago <= 12) {
+					tanksTableData.append("<div class=\"tm\" style=\"background-color: #996600;\">").
+							append(String.valueOf((int) hago)).append("</div>");
+				} else if (hago <= 24) {
+					tanksTableData.append("<div class=\"tm\" style=\"background-color: #990000;\">").
+							append(String.valueOf((int) hago)).append("</div>");
+				} else if (hago <= 99) {
+					tanksTableData.append("<div class=\"tm\" style=\"background-color: #330000;\">").
+							append(String.valueOf((int) hago)).append("</div>");
+				}
+				tanksTableData.append("</td>");
+			}
 			tanksTableData.append("</tr>\n");
 		}
 
+		// end tanks
+
 		// now write :)
 		try {
-			out.write(template.replace("%%%%%%css%%%%%%", css).
-					replace("%%%%%%js%%%%%%", js).
-					replace("%%%%%%LogoImg%%%%%%", is_web ? logoURL : logo).
-					replace("%%%%%%server%%%%%%", server).
+			out.write(template.replace("%%%%%%server%%%%%%", server).
 					replace("%%%%%%ClanName%%%%%%", nonNull(c.clanName)).
 					replace("%%%%%%ClanID%%%%%%", nonNull(c.clanID)).
 					replace("%%%%%%ClanTAG%%%%%%", nonNull(c.clanTag)).
@@ -295,7 +436,9 @@ public class OutputHTML {
 					replace("%%%%%%Income%%%%%%", String.valueOf(c.clanIncome)).
 					replace("%%%%%%TierTableData%%%%%%", tierTableData.toString()).
 					replace("%%%%%%TanksTableData%%%%%%", tanksTableData.toString()).
+					replace("%%%%%%PlayerTanksTableData%%%%%%", playerTanksTableData.toString()).
 					replace("%%%%%%Active1%%%%%%", String.valueOf(lastH)).
+					replace("%%%%%%Active2%%%%%%", String.valueOf(last2)).
 					replace("%%%%%%Active24%%%%%%", String.valueOf(last24)));
 		} catch (IOException ex) {
 			Logger.getLogger(OutputHTML.class.getName()).log(Level.SEVERE, null, ex);
