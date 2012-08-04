@@ -19,6 +19,7 @@ package me.jascotty2.clanstats;
 
 import java.awt.Desktop;
 import java.io.File;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -45,9 +46,85 @@ public class Main implements GetClan.ScanCallback {
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
 		'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 		'{', '|', '}', '~'};
+//
+//	public static void main(String[] args) {
+//		try {
+//			c = OutputDat.loadFile(new File("MAYHM.dat"));
+//			if (c != null) {
+//				File f = new File("test" + File.separator + "MAYHEM.html"),
+//						f2 = new File("test" + File.separator + "MAYHEM_2.dat");
+//				OutputHTML.writeFile(c, f);
+//				OutputDat.writeFile(c, f2);
+//				Desktop.getDesktop().browse(f.toURI());
+//			}
+//		} catch (Exception ex) {
+//			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//		}
+//	}
+
+//	public static void main(String[] args) {
+//		PlayerInfo test = new PlayerInfo();
+//		//test.loadStats("jascotty2", "com");
+//		
+//		//test.loadStats("StaticPappy", "com");
+//		//test.loadStats("torchesalmighty", "com");
+//		//.loadStats("Oxmathus", "com");
+//		//test.loadStats("BadgerAttacker907", "com");
+//		//test.loadStats("BaaadMambajamba", "com");
+//		//test.loadStats("Wolfens", "com");
+//		//test.loadStats("DeadZim", "com");
+//		//test.loadStats("SonnyT", "com");
+//		//test.loadStats("gary3912", "com");
+//		//test.loadStats("Icansee", "com");
+//		//test.loadStats("scotty_123", "com");
+//		//test.loadStats("zeeds", "com");
+//		//test.loadStats("longbarel", "com");
+//		//test.loadStats("white91mustang", "com");
+//		//test.loadStats("Boomeer", "com");
+//		//test.loadStats("PapaBare", "com");
+//		//test.loadStats("bragi365", "com");
+//
+//		test.loadStats("Weber_R", "com");
+//		
+//		if (test.playerID == null) {
+//			System.out.println("player not found");
+//		} else {
+//			test.loadFromWeb("com");
+//			System.out.println("playername: " + test.playername);
+//			System.out.println("id:         " + test.playerID);
+//			System.out.println("in a clan?  " + (test.clan != null ? "true (" + test.clan + ")" : "false"));
+//			if (test.clan != null) {
+//				System.out.println("Position:   " + test.position);
+//			}
+//			System.out.println("Battles:    " + test.totals.battles);
+//			int maxBattles[] = new int[test.battlesByType.length];
+//			for (int i = 0; i < maxBattles.length; ++i) {
+//				maxBattles[i] = test.battlesByType[i];
+//			}
+//			Arrays.sort(maxBattles);
+//			for (int i = maxBattles.length - 1; i > 0 ; --i) {
+//				for (int j = 0; j < maxBattles.length; ++j) {
+//					if (maxBattles[i] == test.battlesByType[j]) {
+//						if (j != TankType.UNKNOWN.ordinal()) {
+//							System.out.println(TankType.values()[j].getPropername() + ":  " + maxBattles[i]);
+//						}
+//						break;
+//					}
+//				}
+//			}
+//			
+//			System.out.println("Top Tanks:");
+//			for (Tank t : test.getSortedTanks()) {
+//				int v = ArrayManip.indexOf(PlayerInfo.typeOrder, t.type);
+//				if (v > 0 && t.tier == test.maxTier[v]) {
+//					System.out.println(t.name + "  (Tier " + t.tier + " " + t.type.getPropername() + ")");
+//				}
+//			}
+//		}
+//	}
 
 	public static void main(String[] args) {
-		
+
 		st = System.currentTimeMillis();
 
 		if (args.length > 0) {
@@ -215,7 +292,7 @@ public class Main implements GetClan.ScanCallback {
 					c.searchTag = clan;
 					c.run();
 				}
-				if(!c.isFound && !(c instanceof GetTournamentTeam)) {
+				if (!c.isFound && !(c instanceof GetTournamentTeam)) {
 					break;
 				}
 			} while (!c.isFound);
@@ -311,8 +388,7 @@ public class Main implements GetClan.ScanCallback {
 					}
 				}
 			}
-			String fn = fileName.
-					replace("%c", safeName).
+			String fn = fileName.replace("%c", safeName).
 					replace("%a", c.clanTag == null ? "" : c.clanTag);
 			if (c instanceof GetTournamentTeam) {
 				if (tournSaveDir.isEmpty()) {

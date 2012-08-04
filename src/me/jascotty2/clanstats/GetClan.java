@@ -45,8 +45,10 @@ public class GetClan implements Runnable, Cloneable {
 	public String clanID = ""; // unique clan id
 	public String ownerID = "", ownerName = "";
 	public Date created;
+	public long generatedTime;
 	public final ArrayList<ProvinceInfo> provinces = new ArrayList<ProvinceInfo>();
 	public final ArrayList<PlayerInfo> players = new ArrayList<PlayerInfo>();
+	public final ArrayList<BattleInfo> battles = new ArrayList<BattleInfo>();
 	public int clanIncome;
 	public int totalTiers[] = new int[10],
 			maxTiers[] = new int[10];
@@ -75,31 +77,38 @@ public class GetClan implements Runnable, Cloneable {
 			requestData = QueryParser.get("http://worldoftanks." + server
 					+ "/community/clans/?type=table&offset=0&limit=100&order_by=name&search="
 					+ searchTag + "&echo=2&id=clans_index");
-			
+
 			// data should be ok if returned success
 			if (requestData == null || !requestData.replace(" ", "").contains("\"result\":\"success\"")) {
 				return;
 			}
-			List<Map<String, Object>> data = QueryParser.getItemLists("items", requestData);
+			List<Object> data = QueryParser.getItemLists("items", requestData);
 			if (data == null || data.isEmpty()) {
 				return;
 			}
+
 			Map<String, Object> dat = null;
 
 			if (data.size() > 1) {
 				// search for exact
-				for (Map<String, Object> d : data) {
-					if (((String) d.get("abbreviation")).equalsIgnoreCase(searchTag)
-							|| ((String) d.get("name")).equalsIgnoreCase(searchTag)) {
-						dat = d;
-						break;
+				for (Object o : data) {
+					if (o instanceof Map) {
+						Map<String, Object> d = (Map<String, Object>) o;
+						if (((String) d.get("abbreviation")).equalsIgnoreCase(searchTag)
+								|| ((String) d.get("name")).equalsIgnoreCase(searchTag)) {
+							dat = d;
+							break;
+						}
 					}
-				}
-				if (dat == null) {
-					return;
+
 				}
 			} else {
-				dat = data.get(0);
+				if (data.get(0) instanceof Map) {
+					dat = (Map<String, Object>) data.get(0);
+				}
+			}
+			if (dat == null) {
+				return;
 			}
 			// extract info from results
 			clanTag = (String) dat.get("abbreviation");
@@ -122,6 +131,7 @@ public class GetClan implements Runnable, Cloneable {
 					&& numPlayers != 0
 					&& emblemURL != null;
 			getProvinces();
+			getBattles();
 			getPlayers();
 		} catch (Exception ex) {
 			Logger.getLogger(GetClan.class.getName()).log(Level.SEVERE, null, ex);
@@ -136,28 +146,83 @@ public class GetClan implements Runnable, Cloneable {
 
 		String res = QueryParser.get("http://worldoftanks." + server + "/community/clans/"
 				+ clanID + "/provinces/?type=table&offset=0&limit=1000&order_by=name&echo=1&id=js-provinces-table");
-		
+
 		if (res == null) {
 			isFound = false;
 		} else {
-			List<Map<String, Object>> data = QueryParser.getItemLists("items", res);
+			List<Object> data = QueryParser.getItemLists("items", res);
 			if (data != null && !data.isEmpty()) {
 				try {
-					for (Map<String, Object> dat : data) {
-						ProvinceInfo p = new ProvinceInfo();
-						p.id = (String) dat.get("id");
-						p.name = (String) dat.get("name");
-						p.map = (String) dat.get("arena_name");
-						p.mapID = dat.get("arena_id").toString();
-						p.setBattleTime(dat.get("prime_time").toString());
-						p.combatsRunning = (Boolean) dat.get("combats_running");
-						p.isAttacked = (Boolean) dat.get("attacked");
-						p.isCapital = (Boolean) dat.get("capital");
-						p.setOccupancy(dat.get("occupancy_time").toString());
-						p.revenue = (Integer) dat.get("revenue");
-						clanIncome += p.revenue;
-						provinces.add(p);
+					for (Object o : data) {
+						if (o instanceof Map) {
+							Map<String, Object> dat = (Map<String, Object>) o;
+							ProvinceInfo p = new ProvinceInfo();
+							p.id = (String) dat.get("id");
+							p.name = (String) dat.get("name");
+							p.map = (String) dat.get("arena_name");
+							p.mapID = dat.get("arena_id").toString();
+							p.setBattleTime(dat.get("prime_time").toString());
+							p.combatsRunning = (Boolean) dat.get("combats_running");
+							p.isAttacked = (Boolean) dat.get("attacked");
+							p.isCapital = (Boolean) dat.get("capital");
+							p.setOccupancy(dat.get("occupancy_time").toString());
+							p.revenue = (Integer) dat.get("revenue");
+							clanIncome += p.revenue;
+							provinces.add(p);
+						}
 					}
+
+				} catch (Throwable t) {
+					System.out.println("ERROR: " + Str.getStackStr(t));
+				}
+			}
+		}
+
+	}
+
+	public void getBattles() {
+
+		String res = QueryParser.get("http://worldoftanks." + server + "/community/clans/"
+				+ clanID + "/battles/?type=table&offset=0&limit=1000&order_by=name&echo=1");
+		//System.out.println(res);
+
+		if (res == null) {
+			isFound = false;
+		} else {
+			List<Object> data = QueryParser.getItemLists("items", res);
+
+			if (data != null && !data.isEmpty()) {
+				try {
+					for (Object o : data) {
+						if (o instanceof Map) {
+							Map<String, Object> dat = (Map<String, Object>) o;
+							BattleInfo b = new BattleInfo();
+							if (dat.containsKey("provinces")
+									&& dat.get("provinces") instanceof List
+									&& ((List) dat.get("provinces")).size() >= 1
+									&& ((List) dat.get("provinces")).get(0) instanceof Map) {
+								Map<String, Object> p = (Map<String, Object>) ((List) dat.get("provinces")).get(0);
+								b.provinceID = (String) p.get("id");
+								b.provinceName = (String) p.get("name");
+							}
+							b.type = (String) dat.get("type");
+							b.started = (Boolean) dat.get("started");
+							if (dat.get("time") instanceof Integer) {
+								b.battleTime = (Integer) dat.get("time");
+							}
+							if (dat.containsKey("arenas") && dat.get("arenas") instanceof List) {
+								//for(String arena : (List<String>) dat.get("arenas")) {
+								for (Object arena : (List) dat.get("arenas")) {
+									if (arena instanceof String) {
+										b.arenas.add((String) arena);
+									}
+								}
+							}
+
+							battles.add(b);
+						}
+					}
+					//System.out.println("--");
 				} catch (Throwable t) {
 					System.out.println("ERROR: " + Str.getStackStr(t));
 				}
@@ -175,20 +240,26 @@ public class GetClan implements Runnable, Cloneable {
 				+ "/community/clans/" + clanID
 				+ "/members/?type=table&offset=0&limit=100&order_by=name&search=&echo=1&id=clan_members_index");
 
+		//System.out.println(res);
+
 		if (res == null) {
 			isFound = false;
 		} else {
-			List<Map<String, Object>> data = QueryParser.getItemLists("items", res);
+			List<Object> data = QueryParser.getItemLists("items", res);
+
 			if (data != null && !data.isEmpty()) {
-				for (Map<String, Object> dat : data) {
-					PlayerInfo p = new PlayerInfo();
-					p.playername = (String) dat.get("name");
-					p.playerID = dat.get("account_id").toString();
-					p.position = (String) dat.get("role");
-					p.setMemberSince(dat.get("member_since").toString());
-					//if(dat.get("banned") != null) 
-					p.is_banned = (Boolean) dat.get("banned");
-					players.add(p);
+				for (Object o : data) {
+					if (o instanceof Map) {
+						Map<String, Object> dat = (Map<String, Object>) o;
+						PlayerInfo p = new PlayerInfo();
+						p.playername = (String) dat.get("name");
+						p.playerID = dat.get("account_id").toString();
+						p.position = (String) dat.get("role");
+						p.setMemberSince(dat.get("member_since").toString());
+						//if(dat.get("banned") != null) 
+						p.is_banned = (Boolean) dat.get("banned");
+						players.add(p);
+					}
 				}
 			}
 		}
@@ -204,7 +275,7 @@ public class GetClan implements Runnable, Cloneable {
 		// spawn multiple lookup threads
 		findThreads = new Thread[players.size() > max_threads ? max_threads : players.size()];
 		for (int i = 0; i < findThreads.length; ++i) {
-			findThreads[i] = new Thread(new threadedPlayerLookup(toLookup.pop()));
+			findThreads[i] = new Thread(new threadedPlayerLookup(toLookup.pop(), i));
 			findThreads[i].start();
 		}
 	}
@@ -213,15 +284,17 @@ public class GetClan implements Runnable, Cloneable {
 		return toLookup.empty() ? null : toLookup.pop();
 	}
 
-	private synchronized void scanDone() {
+	private synchronized void scanDone(int threadId) {
+		findThreads[threadId] = null;
 		if (!stopped) {
 			int al = 0;
 			for (int i = 0; i < findThreads.length; ++i) {
-				if (findThreads[i].isAlive()) {
+				if (findThreads[i] != null && findThreads[i].isAlive()) {
 					++al;
 				}
 			}
-			if (al > 1) {
+			//System.out.println("worker thread in " + this.clanTag + " finished (" + al + " left)");
+			if (al >= 1) {
 				// still waiting on some workers to finish
 				return;
 			}
@@ -229,8 +302,8 @@ public class GetClan implements Runnable, Cloneable {
 
 			for (PlayerInfo p : players) {
 				for (int i = 0; i < 10; ++i) {
-					if (p.tanksByTier[i] > 0) {
-						totalTiers[i] += p.tanksByTier[i];
+					if (p.tanksByTier[0][i] > 0) {
+						totalTiers[i] += p.tanksByTier[0][i];
 						++maxTiers[i];
 					}
 				}
@@ -239,6 +312,7 @@ public class GetClan implements Runnable, Cloneable {
 				}
 			}
 
+			generatedTime = System.currentTimeMillis();
 			if (callback != null) {
 				callback.ScanDone();
 			}
@@ -248,9 +322,11 @@ public class GetClan implements Runnable, Cloneable {
 	class threadedPlayerLookup implements Runnable {
 
 		PlayerInfo player;
+		int threadId = -1;
 
-		public threadedPlayerLookup(PlayerInfo player) {
+		public threadedPlayerLookup(PlayerInfo player, int threadId) {
 			this.player = player;
+			this.threadId = threadId;
 		}
 
 		@Override
@@ -260,13 +336,13 @@ public class GetClan implements Runnable, Cloneable {
 				while (!stopped && (player = getNextLookup()) != null) {
 					player.loadFromWeb(server);
 				}
-				scanDone();
+				scanDone(threadId);
 			} catch (Exception ex) {
 				Logger.getLogger(GetClan.class.getName()).log(Level.SEVERE, null, ex);
 				synchronized (toLookup) {
 					toLookup.clear();
 				}
-				scanDone();
+				scanDone(threadId);
 			}
 		}
 	}
@@ -276,10 +352,10 @@ public class GetClan implements Runnable, Cloneable {
 
 			@Override
 			public int compare(PlayerInfo o1, PlayerInfo o2) {
-				if (o1.maxEffectiveTier == o2.maxEffectiveTier) {
+				if (o1.maxEffectiveTier[0] == o2.maxEffectiveTier[0]) {
 					return o1.playerRating - o2.playerRating;
 				}
-				return o2.maxEffectiveTier - o1.maxEffectiveTier;
+				return o2.maxEffectiveTier[0] - o1.maxEffectiveTier[0];
 			}
 		});
 	}
@@ -299,7 +375,7 @@ public class GetClan implements Runnable, Cloneable {
 		clone.clanID = this.clanID;
 		clone.ownerID = this.ownerID;
 		clone.ownerName = this.ownerName;
-		clone.created  = this.created;
+		clone.created = this.created;
 		clone.provinces.addAll(this.provinces);
 		clone.players.addAll(this.players);
 

@@ -37,19 +37,68 @@
 				<p>Created: %%%%%%ClanCreated%%%%%%</p>
 				<p>Members: %%%%%%Members%%%%%%</p>
 				<p>Provinces: %%%%%%Provinces%%%%%%</p>
+				<p><a href="%%%%%%server%%%%%%/community/clans/%%%%%%ClanID%%%%%%/battles/">Scheduled Battles</a>: %%%%%%Battles%%%%%%</p>
 				<p>Income: %%%%%%Income%%%%%%</p>
 				<p>Max Tiers: <br> (Players / Have)</p>
-				<table>
-					<thead><tr><th>Tier</th><th>Play</th><th>Have</th></thead>
-					<tbody>%%%%%%TierTableData%%%%%%</tbody>
-				</table>
-				<p>Active in last 2 / 24 hours:<br>
-				%%%%%%Active2%%%%%% / %%%%%%Active24%%%%%%</p>
+				<div>
+					<a id="table_alltab" href="javascript:tab2('table_all')">All</a>&nbsp;
+					<a id="table_httab" href="javascript:tab2('table_ht')">H</a>&nbsp;
+					<a id="table_mttab" href="javascript:tab2('table_mt')">M</a>&nbsp;
+					<a id="table_lttab" href="javascript:tab2('table_lt')">L</a>&nbsp;
+					<a id="table_tdtab" href="javascript:tab2('table_td')">D</a>&nbsp;
+					<a id="table_spgtab" href="javascript:tab2('table_spg')">S</a>&nbsp;
+					<a id="table_maxtab" href="javascript:tab2('table_max')">Top</a>
+				</div>
+				<div id="table_all">
+					<table>
+						<thead><tr><th>Tier</th><th>Max</th><th>Play</th><th>Have</th></thead>
+						<tbody>%%%%%%TierTableData_All%%%%%%</tbody>
+					</table>
+				</div>
+				<div id="table_ht" style="display: none">
+					<table>
+						<thead><tr><th>Tier</th><th>Max</th><th>Play</th><th>Have</th></thead>
+						<tbody>%%%%%%TierTableData_HT%%%%%%</tbody>
+					</table>
+				</div>
+				<div id="table_mt" style="display: none">
+					<table>
+						<thead><tr><th>Tier</th><th>Max</th><th>Play</th><th>Have</th></thead>
+						<tbody>%%%%%%TierTableData_MT%%%%%%</tbody>
+					</table>
+				</div>
+				<div id="table_lt" style="display: none">
+					<table>
+						<thead><tr><th>Tier</th><th>Max</th><th>Play</th><th>Have</th></thead>
+						<tbody>%%%%%%TierTableData_LT%%%%%%</tbody>
+					</table>
+				</div>
+				<div id="table_td" style="display: none">
+					<table>
+						<thead><tr><th>Tier</th><th>Max</th><th>Play</th><th>Have</th></thead>
+						<tbody>%%%%%%TierTableData_TD%%%%%%</tbody>
+					</table>
+				</div>
+				<div id="table_spg" style="display: none">
+					<table>
+						<thead><tr><th>Tier</th><th>Max</th><th>Play</th><th>Have</th></thead>
+						<tbody>%%%%%%TierTableData_SPG%%%%%%</tbody>
+					</table>
+				</div>
+				<div id="table_max" style="display: none">
+					<table>
+						<thead><tr><th>Tier</th><th>Max</th><th>Play</th><th>Have</th></thead>
+						<tbody>%%%%%%TierTableData_MAX%%%%%%</tbody>
+					</table>
+				</div>
+				<p>Active in last 1 / 2 / 24 hours:<br>
+				%%%%%%Active1%%%%%% / %%%%%%Active2%%%%%% / %%%%%%Active24%%%%%%</p>
 			</div>
 		</div>
 		<div id="extra">
 			<h2 class="tab"><a id="player-lineuptab" href="javascript:tab('player-lineup')">Player Lineup</a></h2>
 			<h2 class="tab"><a id="tank-lineuptab" href="javascript:tab('tank-lineup')">Tank Lineup</a></h2>
+			<h2 class="tab"><a id="guess-lineuptab" href="javascript:tab('guess-lineup')">Best-Guess</a></h2>
 			<div class="tab" id="player-lineup">
 				<h3 style="display: inline-block">Potential Clanwars Lineup:</h3>
 				<div style="display: inline-block; position: relative; left: 50px">
@@ -86,6 +135,47 @@
 				</table>
 				</div>
 			</div>
+			<div class="tab" id="guess-lineup">
+				<h3 style="display: inline-block">Possible Lineup:</h3>
+				<div style="display: inline-block; position: relative; left: 50px">
+					<a id="guess_recenttab" href="javascript:tab3('guess_recent')">Recent</a>&nbsp;
+					<a id="guess_daytab" href="javascript:tab3('guess_day')">Last Day</a>&nbsp;
+					<a id="guess_totaltab" href="javascript:tab3('guess_total')">All</a>
+				</div>
+				<div class="box" id="guess_recent">
+				<table id="guess-table1">
+					<thead>
+						<tr>
+							<th>Player</th>
+							<th colspan="3">Tanks</th>
+						</tr>
+						</thead>
+					<tbody>%%%%%%GuessTanksTable1%%%%%%</tbody>
+				</table>
+				</div>
+				<div class="box" id="guess_day">
+				<table id="guess-table2">
+					<thead>
+						<tr>
+							<th>Player</th>
+							<th colspan="3">Tanks</th>
+						</tr>
+						</thead>
+					<tbody>%%%%%%GuessTanksTable2%%%%%%</tbody>
+				</table>
+				</div>
+				<div class="box" id="guess_total">
+				<table id="guess-table3">
+					<thead>
+						<tr>
+							<th>Player</th>
+							<th colspan="3">Tanks</th>
+						</tr>
+						</thead>
+					<tbody>%%%%%%GuessTanksTable3%%%%%%</tbody>
+				</table>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -94,6 +184,12 @@
 	function toggleHideInactive(tablenum) {
 		try{
 			var ishidden = document.getElementById("hide-inactive" + tablenum).checked;
+			if(tablenum == 1) {
+				document.getElementById("hide-inactive" + 2).checked = ishidden;
+			} else {
+				document.getElementById("hide-inactive" + 1).checked = ishidden;
+			}
+			for(tablenum = 1; tablenum <= 2; ++tablenum) {
 			var table = document.getElementById(tablenum == 1 ? "lineup-table" : "tank-table");
 			if(tablenum == 1) {
 				for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
@@ -120,6 +216,7 @@
 					}
 				}
 			}
+			}
 		}catch(e){
 			alert(e);
 		}
@@ -127,6 +224,12 @@
 	function toggleHideTanks(tablenum) {
 		try{
 			var ishidden = document.getElementById("show-arty" + tablenum).checked;
+			if(tablenum == 1) {
+				document.getElementById("show-arty" + 2).checked = ishidden;
+			} else {
+				document.getElementById("show-arty" + 1).checked = ishidden;
+			}
+			for(tablenum = 1; tablenum <= 2; ++tablenum) {
 			var table = document.getElementById(tablenum == 1 ? "lineup-table" : "tank-table");
 			if(tablenum == 1) {
 				for (ti=0; ti<table.tBodies[0].rows.length; ++ti) {
@@ -158,6 +261,7 @@
 					}
 				}
 			}
+			}
 		}catch(e){
 			alert(e);
 		}
@@ -169,6 +273,23 @@
 function tab(id) {
 	hidetab('player-lineup');
 	hidetab('tank-lineup');
+	hidetab('guess-lineup');
+	showtab(id);
+}
+function tab2(id) {
+	hidetab('table_all');
+	hidetab('table_ht');
+	hidetab('table_mt');
+	hidetab('table_lt');
+	hidetab('table_td');
+	hidetab('table_spg');
+	hidetab('table_max');
+	showtab(id);
+}
+function tab3(id) {
+	hidetab('guess_recent');
+	hidetab('guess_day');
+	hidetab('guess_total');
 	showtab(id);
 }
 function hidetab(id) {
@@ -203,6 +324,9 @@ function toggle(id) {
 	}
 }
 tab('player-lineup');
+tab2('table_all');
+//tab3('guess_recent');
+tab3('guess_day');
 -->
 </script>
 </body>

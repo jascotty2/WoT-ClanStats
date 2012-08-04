@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import me.jascotty2.lib.io.CheckInput;
+import me.jascotty2.lib.util.ArrayManip;
 
 public class PlayerInfo {
 
@@ -35,8 +36,11 @@ public class PlayerInfo {
 	public BattleStats totals = new BattleStats(), ratingStats = new BattleStats();
 	public int playerRating;
 	public Map<Tank, BattleStats> tankBattles = new HashMap<Tank, BattleStats>();
-	public int[] tanksByTier = new int[10];
-	public int maxEffectiveTier;
+	// 0 == total, 1-5 == tank types, 6 == top tier
+	public int tanksByTier[][] = new int[7][10], maxTier[] = new int[7], maxEffectiveTier[] = new int[7];
+	public static TankType[] typeOrder = new TankType[]{
+		null, TankType.HEAVY, TankType.MEDIUM, TankType.LIGHT, TankType.TD, TankType.SPG};
+	public int battlesByType[] = new int[6];
 	public boolean is_banned = false;
 	public Date created, memberSince, lastbattle;
 
@@ -57,32 +61,46 @@ public class PlayerInfo {
 			this.memberSince = new Date((long) CheckInput.GetDouble(memberSince, 0) * 1000);
 		}
 	}
-	
+
 	public void loadStats(String search, String serverExt) {
 		// lookup player id
 		String res = QueryParser.get("http://worldoftanks." + serverExt
-				+ "/community/accounts/?type=table&offset=0&limit=1&order_by=name&search="
+				+ "/community/accounts/?type=table&offset=0&limit=100&order_by=name&search="
 				+ search + "&echo=2&id=clans_index");
-		
+
 		if (search != null) {
-			List<Map<String, Object>> data = QueryParser.getItemLists("items", res);
+			List<Object> data = QueryParser.getItemLists("items", res);
+
 			if (data != null && !data.isEmpty()) {
-				Map<String, Object> dat = data.get(0);
-				//if (CheckInput.GetInt(QueryParser.getData(res, "filtered_count"), 0) == 1) {
-				playerID = dat.get("id").toString();
-				playername = (String) dat.get("name");
-				clan = (String) dat.get("abbreviation");
-				totals.totalExp = (Integer) dat.get("exp");
-				totals.battles = (Integer) dat.get("battles");
-				totals.victories = (Integer) dat.get("wins");
-				String crDate = dat.get("created_at").toString(); // eg, "2011-12-14"
-				try {
-					SimpleDateFormat crformat = new SimpleDateFormat("yyy-MM-dd");
-					created = crformat.parse(crDate);
-				} catch (ParseException ex) {
-					Logger.getLogger(PlayerInfo.class.getName()).log(Level.SEVERE, null, ex);
+				Object p = null;
+				if(data.size() > 1) {
+					for(Object o : data) {
+						if(o instanceof Map && search.equalsIgnoreCase((String)((Map<String, Object>)o).get("name"))) {
+							p = o;
+							break;
+						}
+					}
+				} else {
+					p = data.get(0);
 				}
-				//}
+				if (p != null && p instanceof Map) {
+					Map<String, Object> dat = (Map<String, Object>) p;
+					//if (CheckInput.GetInt(QueryParser.getData(res, "filtered_count"), 0) == 1) {
+					playerID = dat.get("id").toString();
+					playername = (String) dat.get("name");
+					clan = (String) dat.get("abbreviation");
+					totals.totalExp = (Integer) dat.get("exp");
+					totals.battles = (Integer) dat.get("battles");
+					totals.victories = (Integer) dat.get("wins");
+					String crDate = dat.get("created_at").toString(); // eg, "2011-12-14"
+					try {
+						SimpleDateFormat crformat = new SimpleDateFormat("yyy-MM-dd");
+						created = crformat.parse(crDate);
+					} catch (ParseException ex) {
+						Logger.getLogger(PlayerInfo.class.getName()).log(Level.SEVERE, null, ex);
+					}
+					//}
+				}
 			}
 		}
 	}
@@ -108,15 +126,15 @@ public class PlayerInfo {
 		String numberNW = (serverExt.equals("com") || serverExt.equals("eu")) ? "td-number-nowidth" : "td-number";
 
 		int start = data.indexOf("Registered");
-		if(start < 0) {
-			if(data.indexOf("Player profile is closed.") != -1) {
+		if (start < 0) {
+			if (data.indexOf("Player profile is closed.") != -1) {
 				created = null;
 			}
 			return;
 		}
 		setCreated(QueryParser.getStatTimestamp(data, "Registered", start));
 		setLastbattle(QueryParser.getStatTimestamp(data, "Data as of", start));
-		if(data.substring(start).contains("In Clan")) {
+		if (data.substring(start).contains("In Clan")) {
 			String cl = data.substring(data.indexOf("[", start) + 1, data.indexOf("]", start));
 			clan = QueryParser.getDataWithoutTags(cl);
 			setMemberSince(QueryParser.getStatTimestamp(data, "Enrolled", start));
@@ -158,28 +176,60 @@ public class PlayerInfo {
 			String v = QueryParser.getCellData(data, start).trim();
 			String[] val = QueryParser.getDoubleStat(data, v, start);
 			if (val != null) {
-				if(v.equals("M3 Stuart")){
+				if (v.equals("M3 Stuart")) {
 					// need to verify which M3 Stuart..
 					String cell = data.substring(start, data.indexOf(v, start));
-					if(cell.toLowerCase().contains("ussr")) {
+					if (cell.toLowerCase().contains("ussr")) {
 						v = "M3 Stuart II";
 					}
 				}
 				Tank t = new Tank(tierStrToTier(tier), v);
-				BattleStats b = new BattleStats();
-				b.battles = CheckInput.GetInt(val[0], 0);
-				b.victories = CheckInput.GetInt(val[1], 0);
-				tankBattles.put(t, b);
-				if (t.tier > 0 && t.tier <= 10) {
-					++tanksByTier[t.tier - 1];
-					if (t.effectiveTier() > maxEffectiveTier) {
-						maxEffectiveTier = t.effectiveTier();
-					}
-				}
+				addTank(t, CheckInput.GetInt(val[0], 0), CheckInput.GetInt(val[1], 0));
+
+
 			}
 			start = data.indexOf("<span class=\"level\">", start);
 		}
-	}	
+	}
+
+	public void addTank(Tank t, int battles, int wins) {
+		if (tankBattles.containsKey(t)) {
+			BattleStats b = tankBattles.get(t);
+			battlesByType[t.type.ordinal()] += battles - b.battles;
+			b.battles = battles;
+			b.victories = wins;
+		} else {
+			BattleStats b = new BattleStats();
+			b.battles = battles;
+			b.victories = wins;
+			tankBattles.put(t, b);
+			battlesByType[t.type.ordinal()] += battles;
+
+			if (t.tier > 0 && t.tier <= 10) {
+				if (t.effectiveTier() > maxEffectiveTier[0]) {
+					maxEffectiveTier[0] = t.effectiveTier();
+				}
+				++tanksByTier[0][t.tier - 1];
+				if (t.tier > maxTier[0]) {
+					maxTier[0] = t.tier;
+				}
+				int v = ArrayManip.indexOf(typeOrder, t.type);
+				if (v > 0) {
+					++tanksByTier[v][t.tier - 1];
+					if (t.tier > maxTier[v]) {
+						maxTier[v] = t.tier;
+					}
+					if (t.effectiveTier() > maxEffectiveTier[v]) {
+						maxEffectiveTier[v] = t.effectiveTier();
+					}
+				}
+				++tanksByTier[6][t.effectiveTier() - 1];
+				if (t.effectiveTier() > maxTier[6]) {
+					maxTier[6] = t.effectiveTier();
+				}
+			}
+		}
+	}
 
 	public Tank[] getSortedTanks() {
 		Tank[] tanks = tankBattles.keySet().toArray(new Tank[0]);
@@ -197,8 +247,8 @@ public class PlayerInfo {
 	}
 
 	private int tierStrToTier(String num) {
-		for (int i = 0; i < TankType.tiers.length; ++i) {
-			if (num.equalsIgnoreCase(TankType.tiers[i])) {
+		for (int i = 0; i < Tank.tiers.length; ++i) {
+			if (num.equalsIgnoreCase(Tank.tiers[i])) {
 				return i + 1;
 			}
 		}

@@ -92,28 +92,34 @@ public class GetTournamentTeam extends GetClan {
 //			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
 //			
 		if (ret != null) {
-			List<Map<String, Object>> data = QueryParser.getItemLists("items", ret);
-			for (Map<String, Object> dat : data) {
-				if (dat.get("id").toString().equals(tournamentID)) {
+			List<Object> data = QueryParser.getItemLists("items", ret);
+			if (data != null && !data.isEmpty()) {
+				for (Object o : data) {
+					if (o instanceof Map) {
+						Map<String, Object> dat = (Map<String, Object>) o;
+
+						if (dat.get("id").toString().equals(tournamentID)) {
 //					for(String k : dat.keySet()) {
 //						System.out.println(k + ": " + dat.get(k));
 //					}
-					eventName = (String) dat.get("title");
-					emblemURL = (String) dat.get("logo_url");
-					if(emblemURL != null && !emblemURL.isEmpty()) {
-						emblemURL = "http://worldoftanks." + server + emblemURL;
+							eventName = (String) dat.get("title");
+							emblemURL = (String) dat.get("logo_url");
+							if (emblemURL != null && !emblemURL.isEmpty()) {
+								emblemURL = "http://worldoftanks." + server + emblemURL;
+							}
+							//  maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
+							String desc = QueryParser.getDataWithoutTags(
+									((String) dat.get("description")).replace("\\r", "\r").replace("\\n", "\n"));
+							max = getMax(desc, "maximum total of ", max);
+							maxHT = getMax(desc, "Heavy tank - ", maxHT);
+							maxMT = getMax(desc, "Medium tank - ", maxMT);
+							maxLT = getMax(desc, "Light tank - ", maxLT);
+							maxTD = getMax(desc, "Tank Destroyer - ", maxTD);
+							maxSPG = getMax(desc, "SPG - ", maxSPG);
+
+							return true;
+						}
 					}
-					//  maxLT = 7, maxMT = 10, maxHT = 10, maxTD = 9, maxSPG = 8;
-					String desc = QueryParser.getDataWithoutTags(
-							((String) dat.get("description")).replace("\\r", "\r").replace("\\n", "\n"));
-					max = getMax(desc, "maximum total of ", max);
-					maxHT = getMax(desc, "Heavy tank - ", maxHT);
-					maxMT = getMax(desc, "Medium tank - ", maxMT);
-					maxLT = getMax(desc, "Light tank - ", maxLT);
-					maxTD = getMax(desc, "Tank Destroyer - ", maxTD);
-					maxSPG = getMax(desc, "SPG - ", maxSPG);
-					
-					return true;
 				}
 			}
 		}
@@ -157,7 +163,8 @@ public class GetTournamentTeam extends GetClan {
 			if (requestData == null || !requestData.contains("\"result\":\"success\"")) {
 				return;
 			}
-			List<Map<String, Object>> data = QueryParser.getItemLists("items", requestData);
+			List<Object> data = QueryParser.getItemLists("items", requestData);
+
 			if (data == null || data.isEmpty()) {
 				requestData = QueryParser.get("http://worldoftanks." + server
 						+ "/uc/teams/?event_id=" + regEventID + "&type=table&order_by=name&limit=10&search=" + searchTag);
@@ -171,7 +178,10 @@ public class GetTournamentTeam extends GetClan {
 					return;
 				}
 			}
-			Map<String, Object> dat = data.get(0);
+			if (!(data.get(0) instanceof Map)) {
+				return;
+			}
+			Map<String, Object> dat = (Map<String, Object>) data.get(0);
 
 			// extract info from results
 			ownerID = dat.get("team_owner_id").toString();
@@ -214,11 +224,12 @@ public class GetTournamentTeam extends GetClan {
 		if (requestData == null || !requestData.contains("\"result\":\"success\"")) {
 			return;
 		}
-		List<Map<String, Object>> data = QueryParser.getItemLists("items", requestData);
-		if (data == null || data.isEmpty()) {
+		List<Object> data = QueryParser.getItemLists("items", requestData);
+		if (data == null || data.isEmpty() || !(data.get(0) instanceof Map)) {
 			return;
 		}
-		Map<String, Object> dat = data.get(0);
+
+		Map<String, Object> dat = (Map<String, Object>) data.get(0);
 
 		loadMembers((List<Map<String, Object>>) dat.get("members"));
 	}
@@ -267,18 +278,18 @@ public class GetTournamentTeam extends GetClan {
 			}
 		}
 		for (PlayerInfo p : players) {
-			p.maxEffectiveTier = 0;
+			p.maxEffectiveTier[0] = 0;
 			for (Tank t : p.tankBattles.keySet()) {
 				if (t.tier > 0 && t.tier <= 10) {
-					++p.tanksByTier[t.tier - 1];
-					if (t.effectiveTier() > p.maxEffectiveTier) {
-						p.maxEffectiveTier = t.tier;
+					++p.tanksByTier[0][t.tier - 1];
+					if (t.effectiveTier() > p.maxEffectiveTier[0]) {
+						p.maxEffectiveTier[0] = t.tier;
 					}
 				}
 			}
 			for (int i = 0; i < 10; ++i) {
-				if (p.tanksByTier[i] > 0) {
-					totalTiers[i] += p.tanksByTier[i];
+				if (p.tanksByTier[0][i] > 0) {
+					totalTiers[i] += p.tanksByTier[0][i];
 					++maxTiers[i];
 				}
 			}

@@ -129,24 +129,49 @@ public class QueryParser {
 	 * @param data the data to parse
 	 * @return 
 	 */
-	public static List<Map<String, Object>> getItemLists(String key, String data) {
-		ArrayList<Map<String, Object>> lists = null;
+	public static List<Object> getItemLists(String key, String data) {
+		// [] denotes list items
+		// {} denotes key -> value lists
+		
+		ArrayList<Object> lists = null;
 		key = "\"" + key + "\":";
 		int i = data.indexOf(key);
 		if (i != -1) {
 			try {
-				lists = new ArrayList<Map<String, Object>>();
+				lists = new ArrayList<Object>();
 				i += key.length();
-				while (i < data.length() && data.charAt(i - 1) != '[') {
-					++i;
-				}
+				while (i < data.length() && data.charAt(i - 1) != '[') { ++i; }
+				while (i < data.length() && data.charAt(i) == ' ') { ++i; }
+				
+				boolean listOnly = data.charAt(i) != '{';
+				
 				String dat = data.substring(i, getListStrEnd(data, i));
+				if(listOnly) {
+					i = 0;
+					ArrayList<String> wr = new ArrayList<String>();
+					while (i + 1 < dat.length() && dat.charAt(i) != ']') {
+						// all values seperated by commas
+						int e = dat.indexOf(",", i);
+							if(dat.charAt(i) == '"') {
+								wr.add(e > 0 ? dat.substring(i + 1, e - 2) : dat.substring(i + 1, dat.length() - i - 1));
+							} else {
+								wr.add(null);
+							}
+						if(e > 0) {
+							i = e + 1;
+						} else {
+							i = dat.length();
+						}
+					}
+					lists.add(wr);
+				} else {
 				i = 1;
 				while (i > 0 && i + 1 < dat.length()) {
 					Map<String, Object> wr = new HashMap<String, Object>();
 					while (i + 1 < dat.length() && dat.charAt(i) != '}') {
 						// all keys begin with a quote
-						i = getAssertedIndex(dat, "\"", i) + 1;
+						int start = i = getAssertedIndex(dat, "\"", i) + 1;
+						// now find the matching end quote
 						int end = getAssertedIndex(dat, "\"", i + 1);
 						while (dat.charAt(end - 1) == '\\') {
 							end = getAssertedIndex(dat, "\"", end + 1);
@@ -167,7 +192,7 @@ public class QueryParser {
 							++end;
 						} else {
 							if (dat.charAt(i) == '[') {
-								toAdd = getItemLists(k, data);
+								toAdd = getItemLists(k, dat.substring(start - 1));
 								end = getListStrEnd(dat, i + 1);
 							} else {
 								end = i;
@@ -202,6 +227,7 @@ public class QueryParser {
 					}
 					lists.add(wr);
 					i = dat.indexOf('{', i);
+				}
 				}
 			} catch (Exception ex) {
 				//Logger.getLogger(QueryParser.class.getName()).log(Level.SEVERE, null, ex);

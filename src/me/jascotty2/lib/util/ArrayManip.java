@@ -117,15 +117,8 @@ public class ArrayManip {
 	public static <T> T[] arrayConcat(T[] arr1, T[]... arr2) {
 		if (arr1 == null && arr2 == null) {
 			return null;
-		} else if (arr1 == null || arr1.length == 0) {
-			if (arr2 != null) {
-				if (arr2.length > 1) {
-					return arrayConcat(arr2[0], arraySub(arr2, 1, arr2.length - 1));
-				} else if (arr2.length == 1) {
-					return arr2[0];
-				}
-			}
-			return null;
+		} else if ((arr1 == null || arr1.length == 0) && (arr2 != null) && arr2.length == 1) {
+			return arr2[0];
 		} else if (arr2 == null || arr2.length == 0) {
 			return arr1;
 		}
@@ -133,22 +126,22 @@ public class ArrayManip {
 //		System.arraycopy(arr1, 0, ret, 0, arr1.length);
 //		System.arraycopy(arr2, 0, ret, arr1.length, arr2.length);
 //		return (T[]) ret;
-		int len = arr1.length;
-		for(int i = 0; i < arr2.length; ++i) {
-			if(arr2[i] != null) {
+		int len = arr1 != null ? arr1.length : 0;
+		for (int i = 0; i < arr2.length; ++i) {
+			if (arr2[i] != null) {
 				len += arr2[i].length;
 			}
 		}
-		T[] ret = (T[]) Array.newInstance(arr1.getClass().getComponentType(), len);
-		System.arraycopy(arr1, 0, ret, 0, arr1.length);
-		int pos = arr1.length;
-		for(int i = 0; i < arr2.length; ++i) {
-			if(arr2[i] != null) {
+		T[] ret = (T[]) Array.newInstance((arr1 != null ? arr1 : arr2).getClass().getComponentType(), len);
+		int pos = arr1 != null ? arr1.length : 0;
+		System.arraycopy(arr1, 0, ret, 0, pos);
+		for (int i = 0; i < arr2.length; ++i) {
+			if (arr2[i] != null) {
 				System.arraycopy(arr2[i], 0, ret, pos, arr2[i].length);
 				pos += arr2[i].length;
 			}
 		}
-		
+
 		return ret;
 	}
 
@@ -187,6 +180,18 @@ public class ArrayManip {
 				if (array[i] != null && search.equals(array[i])) {
 					return i;
 				}
+			}
+		}
+		return -1;
+	}
+
+	public static int indexOf(int[] array, int search) {
+		if (array == null || array.length == 0) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; ++i) {
+			if (array[i] == search) {
+				return i;
 			}
 		}
 		return -1;

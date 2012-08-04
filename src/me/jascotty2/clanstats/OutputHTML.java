@@ -33,14 +33,17 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import me.jascotty2.lib.util.ArrayManip;
 
 public class OutputHTML {
 
 	static String template = null;
+	static SimpleDateFormat crformat = new SimpleDateFormat("MMM dd yyy");
+	static SimpleDateFormat genformat = new SimpleDateFormat("EE, MMM dd yyy  HH:mm zzz");
+	static SimpleDateFormat lastformat = new SimpleDateFormat("MM/dd/yyy HH:mm");
 
 	static void loadRes(String folder) throws Exception {
 		String dir = folder.length() > 0 && !folder.endsWith(File.separator) ? folder + File.separator : folder;
@@ -150,7 +153,8 @@ public class OutputHTML {
 	}
 
 	public static void writeFile(GetClan c, File f) throws Exception {
-		loadRes(f.getParent());
+//		loadRes(f.getParent());
+		loadRes(f.getAbsolutePath().substring(0, f.getAbsolutePath().lastIndexOf(File.separator)));
 		BufferedWriter out = null;
 		FileWriter outStream = null;
 		try {
@@ -162,45 +166,75 @@ public class OutputHTML {
 					"IO Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		SimpleDateFormat crformat = new SimpleDateFormat("MMM dd yyy");
-		SimpleDateFormat genformat = new SimpleDateFormat("EE, MMM dd yyy  HH:mm zzz");
-		SimpleDateFormat lastformat = new SimpleDateFormat("MM/dd/yyy HH:mm");
-
-		c.sortPlayersByTankAndRating();
 
 		// prepare data
 		String server = "http://worldoftanks." + c.server;
-		StringBuilder tierTableData = new StringBuilder("\n");
-		for (int i = 9; i > 0; --i) {
-			int lastH = 0, last2 = 0, last24 = 0, num = 0;
-			for (PlayerInfo p : c.players) {
-				if (p.maxEffectiveTier == i + 1) {
-					++num;
-					float hago = ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
-					if (hago <= 24) {
-						if (hago <= 1) {
-							++lastH;
+		
+		// total tanks by tier
+		StringBuilder tierTableData[] = new StringBuilder[7];
+		for (int j = 0; j < 7; ++j) {
+			tierTableData[j] = new StringBuilder("\n");
+			for (int i = 9; i > 0; --i) {
+				int max = 0, total = 0;
+				int last1 = 0, last2 = 0, last24 = 0, num = 0;
+				for (PlayerInfo p : c.players) {
+					total += p.tanksByTier[j][i];
+					if (p.tanksByTier[j][i] > 0) {
+						++max;
+					}
+					if (p.maxTier[j] == i + 1) {
+						++num;
+						float hago = ((c.generatedTime - p.lastbattle.getTime()) / 3600000);
+						if (hago <= 24) {
+							if (hago <= 1) {
+								++last1;
+							}
+							if (hago <= 2) {
+								++last2;
+							}
+							++last24;
 						}
-						if (hago <= 2) {
-							++last2;
-						}
-						++last24;
 					}
 				}
+				if(j + 1 < 7) {
+				tierTableData[j].append("<tr title=\"header=[Active Tier ").
+						append(i + 1).
+						append("'s:]body=[").
+						append(last1).append(" / ").append(last2).append(" / ").append(last24).
+						append("]\"><td>").
+						append(String.valueOf(i + 1)).
+						append("</td><td>").
+						append(num).
+						append("</td><td>").
+						append(String.valueOf(max)).
+						append("</td><td>").
+						append(String.valueOf(total)).
+						append("</td>\n");
+				} else {
+					tierTableData[j].append("<tr title=\"header=[Active ");
+					if(i == 9) tierTableData[j].append("Top Tier: ");
+					else tierTableData[j].append("Max - ").append(String.valueOf(9-i)).append(": ");
+					tierTableData[j].append(i + 1).
+						append("]body=[").
+						append(last1).append(" / ").append(last2).append(" / ").append(last24).
+						append("]\"><td>");
+					if(i == 9) tierTableData[j].append("Max");
+					else tierTableData[j].append("-").append(String.valueOf(9-i));
+					tierTableData[j].append("</td><td>").
+						append(num).
+						append("</td><td>").
+						append(String.valueOf(max)).
+						append("</td><td>").
+						append(String.valueOf(total)).
+						append("</td>\n");
+				}
 			}
-			tierTableData.append("<tr title=\"header=[Active Tier ").
-					append(i + 1).
-					append("'s:]" + "body=[").
-					append(last2).append(" / ").append(last24).append(" / ").append(num).
-					append("]\"><td>").
-					append(String.valueOf(i + 1)).
-					append("</td><td>").
-					append(String.valueOf(c.maxTiers[i])).
-					append("</td><td>").
-					append(String.valueOf(c.totalTiers[i])).
-					append("</td>\n");
 		}
-
+		// end total tanks by tier
+		
+		// player lineup
+		c.sortPlayersByTankAndRating();
+		
 		//ArrayList<Tank> allTanks = new ArrayList<Tank>();
 		HashMap<Tank, ArrayList<PlayerInfo>> tankPlayers = new HashMap<Tank, ArrayList<PlayerInfo>>();
 
@@ -215,7 +249,7 @@ public class OutputHTML {
 				}
 				tankPlayers.get(t).add(p);
 			}
-			float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+			float hago = p.lastbattle == null ? Float.MAX_VALUE : ((c.generatedTime - p.lastbattle.getTime()) / 3600000);
 			if (hago <= 24) {
 				++last24;
 			}
@@ -224,83 +258,33 @@ public class OutputHTML {
 				++last2;
 				playerTanksTableData.append(" class=\"online\"");
 			}
-			playerTanksTableData.append("><td class=\"n\" ").
-					append("title=\"header=[Player Stats: (").
-					append(p.playername).
-					append(")]  body=[");
-			if (p.is_banned) {
-				playerTanksTableData.append("(Player is Banned)<br>");
-			}
-			if (p.created == null) {
-				playerTanksTableData.append("(Closed Account)");
-			} else {
-				playerTanksTableData.append("GR: ").
-						append(String.valueOf(p.playerRating)).
-						append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
-						append("<br>Last Battle: ").append(p.lastbattle == null ? "- ? -" : lastformat.format(p.lastbattle));
-			}
-			playerTanksTableData.append("]\">").append("<a href=\"").append(server).append("/community/accounts/").
-					append(p.playerID).append("/\">");
-			if (p.is_banned) {
-				playerTanksTableData.append("<del>").append(p.playername).append("</del>");
-			} else {
-				playerTanksTableData.append(p.playername);
-			}
-			playerTanksTableData.append("</a>");
 			if (hago <= 1) {
-				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
-						append(String.valueOf((int) hago)).append("</div>");
 				++lastH;
-			} else if (hago <= 2) {
-				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #669900; color: #000;\">").
-						append(String.valueOf((int) hago)).append("</div>");
-			} else if (hago <= 5) {
-				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #99CC00; color: #000;\">").
-						append(String.valueOf((int) hago)).append("</div>");
-			} else if (hago <= 12) {
-				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #996600;\">").
-						append(String.valueOf((int) hago)).append("</div>");
-			} else if (hago <= 24) {
-				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #990000;\">").
-						append(String.valueOf((int) hago)).append("</div>");
-			} else if (hago <= 99) {
-				playerTanksTableData.append("<div class=\"tm\" style=\"background-color: #330000;\">").
-						append(String.valueOf((int) hago)).append("</div>");
 			}
-			playerTanksTableData.append("</td>");
-			int n = 10;
+			playerTanksTableData.append(">").append(getPlayerNameCell(p, server, hago));
+
+			//int n = 10;
 			for (Tank t : p.getSortedTanks()) {
 				// ö = \u00F6 = &#246;
 				// ä = \u00E4 = &#228;
-				playerTanksTableData.append("<td");
-				if (t.type == TankType.SPG) {
-					playerTanksTableData.append(" class=\"spg\"");
-				}
-				playerTanksTableData.append("><div title=\"header=[").
-						append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
-						append("] body=[(Tier ").
-						append(t.tier);
-				if (t.type != TankType.UNKNOWN) {
-					playerTanksTableData.append(" ").append(t.type.getName());
-				}
-				playerTanksTableData.append(")<br>").
-						append(String.valueOf(p.tankBattles.get(t).battles)).
-						append(" battles]\">").
-						append(t.name.replace("\u00F6", "&#246;")).
-						append("</div></td>");
-				if (--n <= 0) {
-					break;
+				int v = ArrayManip.indexOf(PlayerInfo.typeOrder, t.type);
+				if (v > 0 && t.tier == p.maxTier[v]) {
+					playerTanksTableData.append(getTankCell(t, p.tankBattles.get(t).battles));
+	//				if (--n <= 0) {
+	//					break;
+	//				}
 				}
 			}
 			playerTanksTableData.append("</tr>\n");
 		}
 
-		// end player tanks
+		// end player lineup
 
+		// start tank table
 
 		StringBuilder tanksTableData = new StringBuilder("\n");
 		//for (final Map.Entry<Tank, ArrayList<PlayerInfo>> v : tankPlayers.entrySet()) {
-		
+
 		Tank[] tanks = tankPlayers.keySet().toArray(new Tank[0]);
 		Arrays.sort(tanks, new Comparator<Tank>() {
 
@@ -311,10 +295,10 @@ public class OutputHTML {
 						: o1.type.ordinal() - o2.type.ordinal();
 			}
 		});
-		
+
 		for (final Tank t : tanks) {
 			tanksTableData.append("<tr");
-			
+
 			PlayerInfo[] players = tankPlayers.get(t).toArray(new PlayerInfo[0]);
 			Arrays.sort(players, new Comparator<PlayerInfo>() {
 
@@ -329,9 +313,9 @@ public class OutputHTML {
 			});
 
 			int hr2 = 0, hr24 = 0;
-			for (int i = 0; i < 10 && i < players.length; ++i){ //PlayerInfo p : tankPlayers.get(t)) {
+			for (int i = 0; i < 10 && i < players.length; ++i) { //PlayerInfo p : tankPlayers.get(t)) {
 				PlayerInfo p = players[i];
-				float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
+				float hago = p.lastbattle == null ? Float.MAX_VALUE : ((c.generatedTime - p.lastbattle.getTime()) / 3600000);
 				if (hago <= 24) {
 					++hr24;
 				}
@@ -352,20 +336,17 @@ public class OutputHTML {
 					append(t.tier).
 					append("<br>").
 					append(t.type.getPropername()).
+					append("]  body=[").
+					append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
 					append("<br>").
 					append(hr2).append(" / ").append(hr24).append(" / ").append(tankPlayers.get(t).size()).
-					append(")]  body=[").
+					append("]\"><div>").
 					append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
-					append("]\">").
-					append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
-					append("</td>");
+					append("</div></td>");
 
 			for (int i = 0; i < 10 && i < players.length; ++i) {
 				PlayerInfo p = players[i];
-				float hago = p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000);
-				if (hago <= 24) {
-					++last24;
-				}
+				float hago = p.lastbattle == null ? Float.MAX_VALUE : ((c.generatedTime - p.lastbattle.getTime()) / 3600000);
 				tanksTableData.append("<td class=\"");
 				if (hago <= 2) {
 					tanksTableData.append("online ");
@@ -382,7 +363,11 @@ public class OutputHTML {
 				} else {
 					tanksTableData.append("GR: ").
 							append(String.valueOf(p.playerRating)).
-							append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
+							append("<br>Battles: ").append(String.valueOf(p.tankBattles.get(t).battles)).
+							append("<br>Wins: ").append(String.valueOf(p.tankBattles.get(t).victories)).
+							append(" (").append((int) Math.round(((double) p.tankBattles.get(t).victories / p.tankBattles.get(t).battles) * 100)).append("%)").
+							// not on the public page per-tank
+							//append("<br>Hit Ratio: ").append(String.valueOf(p.tankBattles.get(t).hitRatio)).append("%)").
 							append("<br>Last Battle: ").append(p.lastbattle == null ? "- ? -" : lastformat.format(p.lastbattle));
 				}
 				tanksTableData.append("]\">").append("<a href=\"").append(server).append("/community/accounts/").
@@ -392,33 +377,157 @@ public class OutputHTML {
 				} else {
 					tanksTableData.append(p.playername);
 				}
-				tanksTableData.append("</a>");
-				if (hago <= 1) {
-					tanksTableData.append("<div class=\"tm\" style=\"background-color: #009900;\">").
-							append(String.valueOf((int) hago)).append("</div>");
-					++lastH;
-				} else if (hago <= 2) {
-					tanksTableData.append("<div class=\"tm\" style=\"background-color: #669900; color: #000;\">").
-							append(String.valueOf((int) hago)).append("</div>");
-				} else if (hago <= 5) {
-					tanksTableData.append("<div class=\"tm\" style=\"background-color: #99CC00; color: #000;\">").
-							append(String.valueOf((int) hago)).append("</div>");
-				} else if (hago <= 12) {
-					tanksTableData.append("<div class=\"tm\" style=\"background-color: #996600;\">").
-							append(String.valueOf((int) hago)).append("</div>");
-				} else if (hago <= 24) {
-					tanksTableData.append("<div class=\"tm\" style=\"background-color: #990000;\">").
-							append(String.valueOf((int) hago)).append("</div>");
-				} else if (hago <= 99) {
-					tanksTableData.append("<div class=\"tm\" style=\"background-color: #330000;\">").
-							append(String.valueOf((int) hago)).append("</div>");
-				}
-				tanksTableData.append("</td>");
+				tanksTableData.append("</a>").append(getHourBox((int) hago)).append("</td>");
 			}
 			tanksTableData.append("</tr>\n");
 		}
 
-		// end tanks
+		// end tank table
+
+		// start best guess
+
+		StringBuilder bestGuess[] = {new StringBuilder("\n"), new StringBuilder("\n"), new StringBuilder("\n")};
+		int maxHours[] = {2, 24, Integer.MAX_VALUE};
+		for (int i = 0; i < 3; ++i) {
+			// build list of players that may show up
+//			System.out.println("run " + i + " (" + maxHours[i] + " hours)");
+			ArrayList<PlayerInfo> players;
+			if (maxHours[i] < Integer.MAX_VALUE) {
+				players = new ArrayList<PlayerInfo>();
+				for (PlayerInfo p : c.players) {
+					float hago = p.lastbattle == null ? Float.MAX_VALUE : ((c.generatedTime - p.lastbattle.getTime()) / 3600000);
+					if (hago < maxHours[i]) {
+						players.add(p);
+					}
+				}
+			} else {
+				players = c.players;
+			}
+			// list of tanks type players
+			ArrayList<PlayerInfo> specialPlayers[] = new ArrayList[5];
+			// what tank type is stored in each index (matching PlayerInfo.typeOrder)
+			int tankIndicies[] = new int[]{5, 2, 4, 3, 1};
+			/*
+			// first order of business: determine # of arty (2 is optimal, 3 is best)
+			// then compile simmilar list of mediums, TD, and lights (in that order) 
+			int count = 0;
+			for (int run = 0; run <= 1; ++run) {
+				for (int ti = 0; ti < tankIndicies.length; ++ti) {
+					specialPlayers[ti] = new ArrayList<PlayerInfo>();
+					for (int tier = 9; tier > 0; --tier) {
+						for (PlayerInfo p : players) {
+							if (!(p.is_banned || p.created == null) && p.tanksByTier[tankIndicies[ti]][tier] > 0) {
+								for (int pi = ti; pi >= 0; --pi) {
+									if (specialPlayers[pi].contains(p)) {
+										break;
+									} else if (pi == 0) {
+										++count;
+										specialPlayers[ti].add(p);
+										System.out.println("tier " + (tier + 1) + " "
+												+ PlayerInfo.typeOrder[tankIndicies[ti]].getPropername()
+												+ ": " + p.playername);
+										int bestI = 0, bestN = p.battlesByType[0];
+										for (int j = 0; j < 6; ++j) {
+											if (p.battlesByType[j] > bestN) {
+												bestI = j;
+												bestN = p.battlesByType[j];
+											}
+										}
+										System.out.println("(best at: " + TankType.values()[bestI].getPropername() + " (" + bestN + " battles))");
+									}
+								}
+							}
+							if (run == 0 && (ti != tankIndicies.length - 1
+									? specialPlayers[ti].size() > 6 : specialPlayers[ti].size() > 20)) {
+								break;
+							}
+						}
+					}
+				}
+				if (count >= 25 || c.players.size() == count) {
+					break;
+				}
+			}
+			// todo: now examine the list
+			// eg. some players better (more battles) in another class, eg 4 in tier 6 arty, but 200 in tier 10)
+			// also, if low on tier 10 ht, some in other lists may instead opt for heavies 
+			//		(lower-tier arty isn't as bad as lower-tier arty)
+			 */
+			// search through tanks, find what tank type is best at vs highest tier tank
+			for(int j = 0; j < specialPlayers.length; ++j) {
+				specialPlayers[j] = new ArrayList<PlayerInfo>();
+			}
+			for (PlayerInfo p : players) {
+				int bestI = 0, bestN = p.battlesByType[0];
+				for (int j = 0; j < 6; ++j) {
+					if (p.battlesByType[j] > bestN) {
+						bestI = j;
+						bestN = p.battlesByType[j];
+					}
+				}
+				if(p.maxEffectiveTier[ArrayManip.indexOf(PlayerInfo.typeOrder, TankType.values()[bestI])] 
+						>= p.maxEffectiveTier[0] - 1) {
+					specialPlayers[ArrayManip.indexOf(tankIndicies, ArrayManip.indexOf(PlayerInfo.typeOrder, TankType.values()[bestI]))].add(p);
+				} else { 
+					// best tank up front
+					for (int j = 0; j < 5; ++j) {
+						if (p.maxEffectiveTier[0] == p.maxEffectiveTier[j + 1]) {
+							specialPlayers[ArrayManip.indexOf(tankIndicies, TankType.values()[j].ordinal() + 1)].add(p);
+							break;
+						}
+					}
+				}
+			}
+			// list in 'normal' order
+			for (int ind = 0; ind < 5; ++ind) {
+				int sp = ArrayManip.indexOf(tankIndicies, ind + 1);
+				for (PlayerInfo p : specialPlayers[sp].subList(0, 
+						ind == 0 ? (specialPlayers[sp].size() > 15 ? 15 : specialPlayers[sp].size()) 
+						: (specialPlayers[sp].size() > 4 ? 4 : specialPlayers[sp].size()))) {
+					float hago = p.lastbattle == null ? Float.MAX_VALUE : ((c.generatedTime - p.lastbattle.getTime()) / 3600000);
+					bestGuess[i].append("<tr");
+					if (hago <= 2) {
+						bestGuess[i].append(" class=\"online\"");
+					}
+					bestGuess[i].append(">");
+					bestGuess[i].append(getPlayerNameCell(p, server, hago));
+
+
+					int n = 4, tier = 0;
+					for (Tank t : p.getSortedTanks()) {
+						// first sort out the tanks that match tier & type that was added as
+						if (t.type == PlayerInfo.typeOrder[ind + 1] && (tier == 0 || t.tier == tier)) {
+							tier = t.tier;
+//							System.out.println(p.playername + ": tier " + t.tier + " " + PlayerInfo.typeOrder[ind + 1].getPropername() + " - " + t.name);
+							bestGuess[i].append(getTankCell(t, p.tankBattles.get(t).battles));
+							if (--n <= 0) {
+								break;
+							}
+						}
+					}
+					if (n > 0) {
+						// now fill rest with other tanks
+						// only show top-tier tanks
+						boolean used[] = new boolean[]{false, false, false, false, false, false};
+						for (Tank t : p.getSortedTanks()) {
+							if (t.type != PlayerInfo.typeOrder[ind + 1]
+									&& !used[t.type.ordinal()]) {
+								if (p.maxEffectiveTier[0] <= t.effectiveTier() + 3) {
+									bestGuess[i].append(getTankCell(t, p.tankBattles.get(t).battles));
+								}
+								if (--n <= 0) {
+									break;
+								}
+								used[t.type.ordinal()] = true;
+							}
+						}
+					}
+					bestGuess[i].append("</tr>\n");
+				}
+			}
+		}
+
+		// end best guess
 
 		// now write :)
 		try {
@@ -427,16 +536,26 @@ public class OutputHTML {
 					replace("%%%%%%ClanID%%%%%%", nonNull(c.clanID)).
 					replace("%%%%%%ClanTAG%%%%%%", nonNull(c.clanTag)).
 					replace("%%%%%%ClanEmblem%%%%%%", nonNull(c.emblemURL)).
-					replace("%%%%%%Generated%%%%%%", genformat.format(new Date())).
+					replace("%%%%%%Generated%%%%%%", genformat.format(new Date(c.generatedTime))).
 					replace("%%%%%%OwnerID%%%%%%", nonNull(c.ownerID)).
 					replace("%%%%%%OwnerName%%%%%%", nonNull(c.ownerName)).
 					replace("%%%%%%ClanCreated%%%%%%", c.created == null ? "?" : crformat.format(c.created)).
 					replace("%%%%%%Members%%%%%%", String.valueOf(c.numPlayers)).
 					replace("%%%%%%Provinces%%%%%%", String.valueOf(c.provinces.size())).
+					replace("%%%%%%Battles%%%%%%", String.valueOf(c.battles.size())).
 					replace("%%%%%%Income%%%%%%", String.valueOf(c.clanIncome)).
-					replace("%%%%%%TierTableData%%%%%%", tierTableData.toString()).
+					replace("%%%%%%TierTableData_All%%%%%%", tierTableData[0].toString()).
+					replace("%%%%%%TierTableData_HT%%%%%%", tierTableData[1].toString()).
+					replace("%%%%%%TierTableData_MT%%%%%%", tierTableData[2].toString()).
+					replace("%%%%%%TierTableData_LT%%%%%%", tierTableData[3].toString()).
+					replace("%%%%%%TierTableData_TD%%%%%%", tierTableData[4].toString()).
+					replace("%%%%%%TierTableData_SPG%%%%%%", tierTableData[5].toString()).
+					replace("%%%%%%TierTableData_MAX%%%%%%", tierTableData[6].toString()).
 					replace("%%%%%%TanksTableData%%%%%%", tanksTableData.toString()).
 					replace("%%%%%%PlayerTanksTableData%%%%%%", playerTanksTableData.toString()).
+					replace("%%%%%%GuessTanksTable1%%%%%%", bestGuess[0].toString()).
+					replace("%%%%%%GuessTanksTable2%%%%%%", bestGuess[1].toString()).
+					replace("%%%%%%GuessTanksTable3%%%%%%", bestGuess[2].toString()).
 					replace("%%%%%%Active1%%%%%%", String.valueOf(lastH)).
 					replace("%%%%%%Active2%%%%%%", String.valueOf(last2)).
 					replace("%%%%%%Active24%%%%%%", String.valueOf(last24)));
@@ -451,6 +570,86 @@ public class OutputHTML {
 				}
 			}
 		}
+	}
+
+	static String getHourBox(int hours) {
+		if (hours <= 1) {
+			return "<div class=\"tm\" style=\"background-color: #009900;\">" + hours + "</div>";
+		} else if (hours <= 2) {
+			return "<div class=\"tm\" style=\"background-color: #669900; color: #000;\">" + hours + "</div>";
+		} else if (hours <= 5) {
+			return "<div class=\"tm\" style=\"background-color: #99CC00; color: #000;\">" + hours + "</div>";
+		} else if (hours <= 12) {
+			return "<div class=\"tm\" style=\"background-color: #996600;\">" + hours + "</div>";
+		} else if (hours <= 24) {
+			return "<div class=\"tm\" style=\"background-color: #990000;\">" + hours + "</div>";
+		} else if (hours <= 99) {
+			return "<div class=\"tm\" style=\"background-color: #330000;\">" + hours + "</div>";
+		}
+		return "";
+	}
+
+	static String getTankCell(Tank t, int battles) {
+		// ö = \u00F6 = &#246;
+		// ä = \u00E4 = &#228;
+		StringBuilder cell = new StringBuilder();
+		cell.append("<td");
+		if (t.type == TankType.SPG) {
+			cell.append(" class=\"spg\"");
+		}
+		cell.append("><div title=\"header=[").
+				append(t.name.replace("\u00F6", "&#246;").replace("\u00E4", "&#228;")).
+				append("] body=[(Tier ").
+				append(t.tier);
+		if (t.type != TankType.UNKNOWN) {
+			cell.append(" ").append(t.type.getName());
+		}
+		cell.append(")<br>").
+				append(String.valueOf(battles)).
+				append(" battles]\">").
+				append(t.name.replace("\u00F6", "&#246;")).
+				append("</div></td>");
+		return cell.toString();
+	}
+
+	static String getPlayerNameCell(PlayerInfo p, String serverExt) {
+		return getPlayerNameCell(p, serverExt, p.lastbattle == null ? Float.MAX_VALUE : ((System.currentTimeMillis() - p.lastbattle.getTime()) / 3600000));
+	}
+
+	static String getPlayerNameCell(PlayerInfo p, String serverExt, float hago) {
+		StringBuilder name = new StringBuilder();
+		name.append("<td class=\"n\" ").
+				append("title=\"header=[Player Stats: (").
+				append(p.playername).
+				append(")]  body=[");
+		if (p.is_banned) {
+			name.append("(Player is Banned)<br>");
+		}
+		if (p.created == null) {
+			name.append("(Closed Account)");
+		} else {
+			int bestI = 0, bestN = p.battlesByType[0];
+			for (int j = 0; j < 6; ++j) {
+				if (p.battlesByType[j] > bestN) {
+					bestI = j;
+					bestN = p.battlesByType[j];
+				}
+			}
+			name.append("GR: ").
+					append(String.valueOf(p.playerRating)).
+					append("<br>Battles: ").append(String.valueOf(p.totals.battles)).
+					append("<br>").append(TankType.values()[bestI].getPropername()).append(": ").append(String.valueOf(bestN)).
+					append("<br>Last Battle: ").append(p.lastbattle == null ? "- ? -" : lastformat.format(p.lastbattle));
+		}
+		name.append("]\">").append("<a href=\"").append(serverExt).append("/community/accounts/").
+				append(p.playerID).append("/\">");
+		if (p.is_banned) {
+			name.append("<del>").append(p.playername).append("</del>");
+		} else {
+			name.append(p.playername);
+		}
+		name.append("</a>").append(getHourBox((int) hago)).append("</td>");
+		return name.toString();
 	}
 
 	static String nonNull(String v) {

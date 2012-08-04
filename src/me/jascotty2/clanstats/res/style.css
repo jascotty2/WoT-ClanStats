@@ -57,7 +57,7 @@ div.center {
 
 div.center div.data {
 	z-index: 0;
-	width: 900px;
+	width: 910px;
 	min-height: 750px;
 	color: #BABFBA;
 	outline-color: #BABFBA;
@@ -117,7 +117,7 @@ div.center div.data {
 }
 /* div.center div.data div.basic */
 #info {
-	width: 190px;
+	width: 200px;
 	position: float;
 	float: right;
 	font-size: 12pt;
